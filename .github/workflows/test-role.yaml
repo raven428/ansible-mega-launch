@@ -1,0 +1,97 @@
+# kics-scan disable=555ab8f9-2001-455e-a077-f2d0f41e2fb9
+---
+name: test role
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+  schedule:
+    - cron: "11 11 * * 1"
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+jobs:
+  default:
+    name: t
+    timeout-minutes: 33
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        # prop_type:
+        #   - simple_other
+        #   - simple_target
+        #   - simple_controller
+        #   - release_other
+        #   - release_target
+        #   - release_controller
+        #   - compress # (full=remote, split=local)
+        # call_mode:
+        #   - full
+        #   - split
+        ansible_ver:
+          - "07"
+          - "09"
+          - "11"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: true
+      - name: test role
+        env:
+          # ANSIBLE_PROP_TYPE: ${{ matrix.prop_type }}
+          # ANSIBLE_CALL_MODE: ${{ matrix.call_mode }}
+          IMAGE_NAME: ansible-${{ matrix.ansible_ver }}:latest
+          ANSIBLE_GITHUB_TOKEN: ${{ secrets.LOCAL_WS_TOKEN }}
+        run: molecule/default/run-tests.sh
+  linters:
+    name: linters
+    timeout-minutes: 11
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: true
+      - name: lint the repo
+        env:
+          BRA: master
+        run: |
+          curl -sL \
+          https://raw.githubusercontent.com/raven428/container-images/refs/heads/${{
+          env.BRA }}/sources/linters-ubuntu-22_04/check-dir.sh | bash
+          curl -sL \
+          https://raw.githubusercontent.com/raven428/container-images/refs/heads/${{
+          env.BRA }}/sources/ansible-ubuntu/check-dir.sh | bash
+  MegaLinter:
+    name: MegaLinter
+    timeout-minutes: 11
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: true
+      - name: MegaLinter
+        uses: oxsecurity/megalinter@v8
+        env:
+          VALIDATE_ALL_CODEBASE: true
+  all-green:
+    name: all green
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    needs:
+      - default
+      - linters
+      - MegaLinter
+    if: always()
+    permissions:
+      checks: read
+    steps:
+      - name: waiting for checks success
+        uses: poseidon/wait-for-status-checks@v0.6.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ignore: all green, foobar
+          timeout: 111s
