@@ -1,0 +1,4 @@
+---
+- name: Mega start
+  ansible.builtin.include_tasks: "mega-start.yaml"
+  when: "start_enable"

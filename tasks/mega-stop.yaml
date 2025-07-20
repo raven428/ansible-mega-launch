@@ -1,0 +1,106 @@
+---
+- name: Set current stop retry variable
+  ansible.builtin.set_fact:
+    mestop_retry_count: "{{ 1 if mestop_retry_count is undefined else mestop_retry_count
+      | int }}"
+
+- name: Stop and check
+  block:
+    - name: Try [{{ mestop_retry_count }}/{{ start_max_restarts }}]
+        stop # noqa name[template]
+      ansible.builtin.set_fact:
+        melau_stop_epoch: "{{ '%s' | strftime }}"
+
+    - name: Stop [{{ service_name }}] service # noqa name[template]
+      ansible.builtin.systemd:
+        name: "{{ service_name }}"
+        force: yes
+        masked: no
+        no_block: no
+        state: stopped
+        daemon_reload: yes
+      register: mestop_result_systemd
+      until: >-
+        mestop_result_systemd.status.ActiveState != 'active' or ansible_check_mode
+      retries: 3
+      delay: 1
+
+    - name: Get PID of [{{ process_pattern }}] process # noqa name[template]
+      community.general.pids:
+        pattern: "{{ process_pattern }}"
+      register: mestop_processes
+      when: process_pattern | default('') | length > 0
+
+    - name: Kill [{{ process_pattern }}] process by PID # noqa name[template]
+      ansible.builtin.command: "/usr/bin/env kill {{ item }}" # noqa no-changed-when
+      loop: "{{ mestop_processes.pids }}"
+      when: mestop_processes.pids is defined
+
+    - name: Waiting until processes are exit
+      ansible.builtin.wait_for:
+        path: "/proc/{{ item }}/status"
+        state: absent
+        delay: "{{ wait_delay | default(2) }}"
+        timeout: "{{ wait_timeout | default(77) }}"
+        connect_timeout: "{{ wait_connect | default(3) }}"
+      loop: "{{ mestop_processes.pids }}"
+      register: mestop_processes_killed
+      when: mestop_processes.pids is defined
+
+    - name: Force kill stuck [{{ process_pattern }}] process # noqa name[template]
+      ansible.builtin.command: "/usr/bin/env kill -9 {{ item }}" # noqa no-changed-when
+      loop: "{{ mestop_processes_killed.results | select('failed') |
+        map(attribute='item') | list }}"
+      when: mestop_processes_killed.results is defined
+
+    - name: Waiting until force killed processes dies
+      ansible.builtin.wait_for:
+        path: "/proc/{{ item }}/status"
+        state: absent
+        delay: "{{ wait_delay | default(2) }}"
+        timeout: "{{ wait_timeout | default(77) }}"
+        connect_timeout: "{{ wait_connect | default(3) }}"
+      loop: "{{ mestop_processes.pids }}"
+      register: mestop_processes_killed
+      when: mestop_processes.pids is defined
+
+    - name: Gather facts on listening ports
+      community.general.listen_ports_facts:
+        command: "ss"
+
+    - name: Check open ports [{{ port_list | join(',') }}] list # noqa name[template]
+      ansible.builtin.fail:
+        msg: Port [{{ item.port }}] by pid [{{ item.pid }}] still opened, so failure
+      vars:
+        listen_violations: "{{ (ansible_facts.tcp_listen + ansible_facts.udp_listen) |
+          selectattr('port', 'in', port_list) | list }}"
+      loop: "{{ listen_violations }}"
+      when: not ansible_check_mode
+
+  rescue:
+    - name: Print retries message
+      ansible.builtin.debug:
+        msg: "retries {{ mestop_retry_count }} >= {{ start_max_restarts }} maximum,
+          giving up…"
+      when: mestop_retry_count | int >= start_max_restarts | int
+
+    - name: Retry block
+      when: mestop_retry_count | int < start_max_restarts | int + 1
+      block:
+        - name: Increment the retry count
+          ansible.builtin.set_fact:
+            mestop_retry_count: "{{ mestop_retry_count | int + 1 }}"
+
+        - name: Delay {{ start_restart_delay }} seconds before
+            again # noqa name[template]
+          ansible.builtin.wait_for:
+            timeout: "{{ start_restart_delay }}"
+          delegate_to: localhost # DevSkim: ignore DS162092
+          become: false
+
+        - name: Recursive include
+          ansible.builtin.include_tasks: mega-stop.yaml
+
+- name: Reset count variable (obnulenin)
+  ansible.builtin.set_fact:
+    mestop_retry_count: 1
