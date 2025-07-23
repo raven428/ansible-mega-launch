@@ -1,0 +1,44 @@
+[Unit]
+After=network-online.target
+Description=gaiad service
+
+[Service]
+ExecStart=/usr/local/bin/gaiad --home=/usr/local/gaia start
+WorkingDirectory=/usr/local/gaia
+Type=simple
+User=root
+Group=root
+SyslogIdentifier=gaiad
+Restart=no
+MemoryDenyWriteExecute=yes
+EnvironmentFile=/dev/null
+ProtectSystem=strict
+PrivateDevices=yes
+CapabilityBoundingSet=
+ReadWritePaths=/usr/local/gaia
+SystemCallFilter=@default @aio @basic-io @file-system @io-event @keyring @memlock \
+  @network-io @process @signal @sync @timer flock mprotect pipe2 madvise uname
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestartSec=1
+StartLimitInterval=0
+ProtectHome=read-only
+NoNewPrivileges=yes
+ProtectControlGroups=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+AmbientCapabilities=
+LockPersonality=yes
+PrivateTmp=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+SystemCallArchitectures=native
+SystemCallErrorNumber=ECANCELED
+PrivateUsers=yes
+RemoveIPC=yes
+UMask=0077
+LimitNPROC=32768:131072
+LimitNOFILE=131072:524288
+
+[Install]
+WantedBy=multi-user.target

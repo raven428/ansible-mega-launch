@@ -1,0 +1,9 @@
+---
+- name: Verify downloaded files
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Converge run was in check_mode
+      ansible.builtin.stat:
+        path: "{{ check_flag }}"
+      register: converge_check
