@@ -1,0 +1,4 @@
+---
+- name: Mega stop
+  ansible.builtin.include_tasks: "mega-stop.yaml"
+  when: "stop_enable"

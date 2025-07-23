@@ -1,0 +1,7 @@
+---
+download_root: "/tmp/molecule"
+service_home: "/usr/local/gaia"
+check_flag: "{{ download_root }}/to-notify-verifier-that-converged-in-check-mode"
+call_mode: "{{ lookup('ansible.builtin.env', 'ANSIBLE_CALL_MODE', default='split') }}"
+prop_type: "{{ lookup('ansible.builtin.env', 'ANSIBLE_PROP_TYPE',
+  default='simple_target') }}"

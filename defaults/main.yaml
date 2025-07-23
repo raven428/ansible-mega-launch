@@ -1,0 +1,12 @@
+---
+# service_name: None
+start_max_checks: 11
+start_retry_delay: 1
+start_max_restarts: 5
+start_restart_delay: 3
+# port_list: []
+# log_regexp: None
+required_checks: 2
+# process_pattern: None
+stop_enable: yes
+start_enable: yes

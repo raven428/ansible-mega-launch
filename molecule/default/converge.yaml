@@ -1,0 +1,46 @@
+---
+- name: Perform actions from inventory variables
+  hosts: all
+  pre_tasks:
+    - name: Create a check mode flag if running in check mode
+      ansible.builtin.file:
+        path: "{{ check_flag }}"
+        state: directory
+        mode: "0644"
+      check_mode: false
+      when: ansible_check_mode
+    - name: Remove the check mode flag if not running in check mode
+      ansible.builtin.file:
+        path: "{{ check_flag }}"
+        state: absent
+      when: not ansible_check_mode
+  tasks:
+    - name: Start test service
+      when: "prop_mode == 'start'"
+      ansible.builtin.include_role:
+        name: ansible-mega-launch
+        tasks_from: mega-start.yaml
+      vars:
+        service_name: gaiad
+        port_list:
+          - 9090
+          - 9091
+          - 26656
+          - 26657
+        log_regexp: '.+ committed state .+ height=\d{2,} .+'
+        required_checks: 2
+    - name: Stop test service
+      when: "prop_mode == 'stop'"
+      ansible.builtin.include_role:
+        name: ansible-mega-launch
+        tasks_from: mega-stop.yaml
+      vars:
+        service_name: gaiad
+        process_pattern: '.*\/bin\/gaiad .*'
+        port_list:
+          - 9090
+          - 9091
+          - 26656
+          - 26657
+        log_regexp: '.+ committed state .+ height=\d{2,} .+'
+        required_checks: 2

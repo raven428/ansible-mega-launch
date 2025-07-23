@@ -1,0 +1,85 @@
+---
+- name: Prepare controller
+  hosts: localhost # DevSkim: ignore DS162092
+  connection: local
+  gather_facts: false
+  no_log: "{{ molecule_no_log }}"
+  vars:
+    roles_dir: "{{ lookup('env', 'HOME') }}/.ansible/roles"
+  tasks:
+    - name: Create molecule roles directory
+      ansible.builtin.file:
+        path: "{{ roles_dir }}"
+        state: directory
+        force: true
+        recurse: true
+    - name: Symbolic link to role
+      ansible.builtin.file:
+        src: /ansible
+        dest: "{{ roles_dir }}/ansible-mega-launch"
+        state: link
+        force: true
+
+- name: Prepare targets
+  hosts: all
+  vars:
+    binary_dir: "/usr/local/bin"
+    binary_name: "gaiad"
+    network_name: "launcher"
+    source_files: "/ansible/molecule/default/files"
+  tasks:
+    - name: Create directory for binary
+      ansible.builtin.file:
+        path: "{{ dir }}"
+        state: directory
+        force: true
+        recurse: true
+        mode: "0755"
+      loop:
+        - "{{ binary_dir }}"
+        - "{{ service_home }}"
+      loop_control:
+        loop_var: dir
+    - name: Download and install gaiad
+      ansible.builtin.get_url:
+        url: "https://github.com/cosmos/gaia/releases/\
+          download/v14.2.0/gaiad-v14.2.0-linux-amd64"
+        dest: "{{ binary_dir }}/{{ binary_name }}"
+        mode: "0755"
+      register: _download_file
+      until: _download_file is succeeded
+      retries: 5
+      delay: 2
+    - name: Init validator node
+      args:
+        executable: /bin/bash
+      ansible.builtin.shell: "{{ binary_dir }}/{{ binary_name }} --home='{{
+        service_home }}' init -o --chain-id='{{ network_name }}' '{{ network_name }}
+        validator'
+
+        {{ binary_dir }}/{{ binary_name }} --home='{{ service_home }}' tendermint
+        unsafe-reset-all"
+      changed_when: false
+    - name: Download validator configs
+      ansible.builtin.get_url:
+        url: "https://github.com/raven428/ansible-mega-launch/releases/\
+          download/molecule-default/{{ file }}"
+        dest: "{{ service_home }}/config/{{ file }}"
+        mode: "0644"
+        force: true
+      register: _download_file
+      until: _download_file is succeeded
+      retries: 5
+      delay: 2
+      loop:
+        - "config.toml"
+        - "genesis.json"
+        - "priv_validator_key.json"
+      loop_control:
+        loop_var: file
+    - name: Upload systemd unit
+      ansible.builtin.copy:
+        src: "{{ source_files }}/gaiad.service"
+        dest: "/etc/systemd/system/gaiad.service"
+        force: true
+        mode: "0644"
