@@ -65,7 +65,8 @@
     "ECANCELED",
     "NOFILE",
     "tendermint",
-    "selectattr"
+    "selectattr",
+    "startswith"
   ],
   "enabled": true
 }
