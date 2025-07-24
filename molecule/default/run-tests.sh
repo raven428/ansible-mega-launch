@@ -11,6 +11,7 @@ LOG_PATH="/tmp/molecule-$(/usr/bin/env date '+%Y%m%d%H%M%S.%3N')"
 printf "\n\n\nmolecule [create] action\n"
 ANSIBLE_LOG_PATH="${LOG_PATH}-0create" \
   ansible-docker.sh molecule -v create -s "${sce}"
+
 for prop_mode in start stop; do
   printf "\n\n\nmolecule [%s] mode [converge] check\n" "${prop_mode}"
   ANSIBLE_LOG_PATH="${LOG_PATH}-1check" \
@@ -35,5 +36,12 @@ for prop_mode in start stop; do
   printf "\n\n\nmolecule [idempotence] check\n"
   ANSIBLE_LOG_PATH="${LOG_PATH}-5idempotence" \
     ansible-docker.sh molecule -v idempotence -s "${sce}" -- --check \
+    --extra-vars prop_mode="${prop_mode}"
+done
+
+for prop_mode in stop_proc stop_port; do
+  printf "\n\n\nmolecule [converge] action\n"
+  ANSIBLE_LOG_PATH="${LOG_PATH}-2converge" \
+    ansible-docker.sh molecule -v converge -s "${sce}" -- \
     --extra-vars prop_mode="${prop_mode}"
 done
