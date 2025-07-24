@@ -15,13 +15,13 @@
       ansible.builtin.systemd:
         name: "{{ service_name }}"
         force: yes
-        masked: no
+        enabled: no
         no_block: no
         state: stopped
         daemon_reload: yes
       register: mestop_result_systemd
-      until: >-
-        mestop_result_systemd.status.ActiveState != 'active' or ansible_check_mode
+      until: "mestop_result_systemd.status.ActiveState | default('') != 'active' or
+        ansible_check_mode"
       retries: 3
       delay: 1
 
@@ -34,7 +34,7 @@
     - name: Kill [{{ process_pattern }}] process by PID # noqa name[template]
       ansible.builtin.command: "/usr/bin/env kill {{ item }}" # noqa no-changed-when
       loop: "{{ mestop_processes.pids }}"
-      when: mestop_processes.pids is defined
+      when: mestop_processes.pids | length | default(0) > 0
 
     - name: Waiting until processes are exit
       ansible.builtin.wait_for:
@@ -45,7 +45,7 @@
         connect_timeout: "{{ wait_connect | default(3) }}"
       loop: "{{ mestop_processes.pids }}"
       register: mestop_processes_killed
-      when: mestop_processes.pids is defined
+      when: mestop_processes.pids | length | default(0) > 0
 
     - name: Force kill stuck [{{ process_pattern }}] process # noqa name[template]
       ansible.builtin.command: "/usr/bin/env kill -9 {{ item }}" # noqa no-changed-when
@@ -62,7 +62,14 @@
         connect_timeout: "{{ wait_connect | default(3) }}"
       loop: "{{ mestop_processes.pids }}"
       register: mestop_processes_killed
-      when: mestop_processes.pids is defined
+      when: mestop_processes.pids | length | default(0) > 0
+
+    - name: Check process is not spawning
+      ansible.builtin.fail:
+        msg: Check [{{ process_pattern }}] is not spawning
+      when:
+        - not ansible_check_mode
+        - mestop_processes.pids | length | default(0) > 0
 
     - name: Gather facts on listening ports
       community.general.listen_ports_facts:
@@ -79,7 +86,7 @@
 
   rescue:
     - name: Print retries message
-      ansible.builtin.debug:
+      ansible.builtin.fail:
         msg: "retries {{ mestop_retry_count }} >= {{ start_max_restarts }} maximum,
           giving up…"
       when: mestop_retry_count | int >= start_max_restarts | int
