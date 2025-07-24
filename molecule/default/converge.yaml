@@ -69,8 +69,8 @@
             tasks_from: mega-stop.yaml
           vars:
             service_name: "sshd"
-            start_max_restarts: 3
-            start_restart_delay: 1
+            max_rescues: 3
+            rescue_delay: 1
             port_list:
               - 9090
               - 9091

@@ -6,7 +6,7 @@
 
 - name: Stop and check
   block:
-    - name: Try [{{ mestop_retry_count }}/{{ start_max_restarts }}]
+    - name: Try [{{ mestop_retry_count }}/{{ max_rescues }}]
         stop # noqa name[template]
       ansible.builtin.set_fact:
         melau_stop_epoch: "{{ '%s' | strftime }}"
@@ -40,7 +40,7 @@
       ansible.builtin.wait_for:
         path: "/proc/{{ item }}/status"
         state: absent
-        delay: "{{ wait_delay | default(2) }}"
+        delay: "{{ murder_delay | default(2) }}"
         timeout: "{{ wait_timeout | default(77) }}"
         connect_timeout: "{{ wait_connect | default(3) }}"
       loop: "{{ mestop_processes.pids }}"
@@ -57,7 +57,7 @@
       ansible.builtin.wait_for:
         path: "/proc/{{ item }}/status"
         state: absent
-        delay: "{{ wait_delay | default(2) }}"
+        delay: "{{ murder_delay | default(2) }}"
         timeout: "{{ wait_timeout | default(77) }}"
         connect_timeout: "{{ wait_connect | default(3) }}"
       loop: "{{ mestop_processes.pids }}"
@@ -87,21 +87,21 @@
   rescue:
     - name: Print retries message
       ansible.builtin.fail:
-        msg: "retries {{ mestop_retry_count }} >= {{ start_max_restarts }} maximum,
+        msg: "retries {{ mestop_retry_count }} >= {{ max_rescues }} maximum,
           giving up…"
-      when: mestop_retry_count | int >= start_max_restarts | int
+      when: mestop_retry_count | int >= max_rescues | int
 
     - name: Retry block
-      when: mestop_retry_count | int < start_max_restarts | int + 1
+      when: mestop_retry_count | int < max_rescues | int + 1
       block:
         - name: Increment the retry count
           ansible.builtin.set_fact:
             mestop_retry_count: "{{ mestop_retry_count | int + 1 }}"
 
-        - name: Delay {{ start_restart_delay }} seconds before
+        - name: Delay {{ rescue_delay }} seconds before
             again # noqa name[template]
           ansible.builtin.wait_for:
-            timeout: "{{ start_restart_delay }}"
+            timeout: "{{ rescue_delay }}"
           delegate_to: localhost # DevSkim: ignore DS162092
           become: false
 

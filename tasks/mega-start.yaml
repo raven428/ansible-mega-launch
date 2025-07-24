@@ -6,7 +6,7 @@
 
 - name: Start and check if not started or checks still failed
   block:
-    - name: "Try [{{ melau_retry_count }}/{{ start_max_restarts }}]
+    - name: "Try [{{ melau_retry_count }}/{{ max_rescues }}]
         starting" # noqa name[template]
       ansible.builtin.set_fact:
         melau_start_epoch: "{{ '%s' | strftime }}"
@@ -37,8 +37,8 @@
       register: melau_result_check
       until: melau_result_check.passed_checks | default(0) | int >= required_checks |
         int or ansible_check_mode
-      retries: "{{ start_max_checks }}"
-      delay: "{{ start_retry_delay }}"
+      retries: "{{ check_retries }}"
+      delay: "{{ retry_delay }}"
 
   rescue:
     - name: Stop [{{ service_name }}] service # noqa name[template]
@@ -52,22 +52,22 @@
         daemon_reload: yes
 
     - name: Print retries message
-      ansible.builtin.debug:
-        msg: "retries {{ melau_retry_count }} >= {{ start_max_restarts }} maximum,
+      ansible.builtin.fail:
+        msg: "retries {{ melau_retry_count }} >= {{ max_rescues }} maximum,
           giving up…"
-      when: melau_retry_count | int >= start_max_restarts | int
+      when: melau_retry_count | int >= max_rescues | int
 
     - name: Retry block
-      when: melau_retry_count | int < start_max_restarts | int + 1
+      when: melau_retry_count | int < max_rescues | int + 1
       block:
         - name: Increment the retry count
           ansible.builtin.set_fact:
             melau_retry_count: "{{ melau_retry_count | int + 1 }}"
 
-        - name: "Delay {{ start_restart_delay }} seconds before
+        - name: "Delay {{ rescue_delay }} seconds before
             restart" # noqa name[template]
           ansible.builtin.wait_for:
-            timeout: "{{ start_restart_delay }}"
+            timeout: "{{ rescue_delay }}"
           delegate_to: localhost # DevSkim: ignore DS162092
           become: false
 
