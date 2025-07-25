@@ -1,0 +1,31 @@
+---
+- name: Set start epoch variable
+  ansible.builtin.set_fact:
+    melau_start_epoch: "{{ '%Y%m%dT%H%M%S' | strftime }}"
+
+- name: Starting unit [{{ service_name }}] checking ports [{{ port_list | join(',') }}]
+    matches [{{ log_regexp | default(None) }}] log [{{ required_checks }}]
+    req # noqa name[template]
+  mega_launch:
+    unit: "{{ service_name }}"
+    port_list: "{{ port_list | default(omit) }}"
+    log_regexp: "{{ log_regexp | default(omit) }}"
+    wait_timeout: "{{ check_retries * retry_delay }}"
+    max_rescues: "{{ max_rescues }}"
+    required_checks: "{{ required_checks }}"
+    rescue_delay: "{{ rescue_delay }}"
+    epoch: "{{ melau_start_epoch }}"
+  register: melau_job
+  changed_when: false
+  async: "{{ max_rescues * (check_retries + rescue_delay + retry_delay) }}"
+  poll: 0
+
+- name: Wait for mega_launch to complete
+  mega_status:
+    unit: "{{ service_name }}"
+    jid: "{{ melau_job.ansible_job_id }}"
+    epoch: "{{ melau_start_epoch }}"
+  register: mega_launch
+  until: mega_launch.finished
+  retries: "{{ max_rescues * (check_retries + rescue_delay + retry_delay) }}"
+  delay: "{{ retry_delay }}"
