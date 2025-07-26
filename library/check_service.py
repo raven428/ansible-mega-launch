@@ -152,8 +152,10 @@ def main() -> None:  # noqa: C901, PLR0912
   for globpattern in (r'*', r'?', r'['):
     if globpattern in unit:
       module.fail_json(
-        msg='This module does not currently support using glob patterns, found'
-        f'[{globpattern}] in [{unit}] service',
+        msg=(
+          'This module does not currently support using glob patterns, found '
+          f'[{globpattern}] in [{unit}] service'
+        ),
       )
   result: dict[str, Any] = {
     'changed': False,
