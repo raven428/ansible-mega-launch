@@ -30,8 +30,11 @@ jobs:
         #   - full
         #   - split
         ansible_ver:
+          - "06"
           - "07"
+          - "08"
           - "09"
+          - "10"
           - "11"
     steps:
       - uses: actions/checkout@v4
