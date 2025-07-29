@@ -1,0 +1,24 @@
+{
+  "threshold": 0,
+  "reporters": ["html", "markdown"],
+  "ignore": [
+    "**/node_modules/**",
+    "**/.git/**",
+    "**/report/**",
+    "**/megalinter-reports/**",
+    "**/*cache*/**",
+    "**/*.json",
+    "**/*.yaml",
+    "**/*.yml",
+    "**/*.md",
+    "**/*.html",
+    "**/*.xml",
+    "**/*.jpg",
+    "**/*.png",
+    "**/*.svg",
+    "**/*.zip",
+    "**/*.bin",
+    "library/mega_status.py",
+    "action_plugins/mega_status.py"
+  ]
+}

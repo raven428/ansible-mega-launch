@@ -66,7 +66,15 @@
     "NOFILE",
     "tendermint",
     "selectattr",
-    "startswith"
+    "startswith",
+    "COPYPASTE",
+    "elif",
+    "sysv",
+    "multival",
+    "openlog",
+    "Haan",
+    "seealso",
+    "FURB"
   ],
   "enabled": true
 }

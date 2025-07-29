@@ -3,6 +3,7 @@
   hosts: all
   vars:
     unit_name: gaiad
+    regexp_line: '.+ committed state .+ height=\d{2,} .+'
   pre_tasks:
     - name: Create a check mode flag if running in check mode
       ansible.builtin.file:
@@ -17,7 +18,24 @@
         state: absent
       when: not ansible_check_mode
   tasks:
-    - name: Start test service
+    - name: Start test service with module
+      when: "prop_mode == 'mod_start'"
+      ansible.builtin.include_role:
+        name: ansible-mega-launch
+        tasks_from: mod-start.yaml
+      vars:
+        service_name: "{{ unit_name }}"
+        port_list:
+          - 9090
+          - 9091
+          - 26656
+          - 26657
+        log_regexp: "{{ regexp_line }}"
+        max_rescues: 2
+        check_retries: 11
+        required_checks: 2
+
+    - name: Start test service with role
       when: "prop_mode == 'start'"
       ansible.builtin.include_role:
         name: ansible-mega-launch
@@ -29,9 +47,9 @@
           - 9091
           - 26656
           - 26657
-        log_regexp: '.+ committed state .+ height=\d{2,} .+'
+        log_regexp: "{{ regexp_line }}"
         required_checks: 2
-    - name: Stop test service
+    - name: Stop test service with role
       when: "prop_mode == 'stop'"
       ansible.builtin.include_role:
         name: ansible-mega-launch
@@ -59,8 +77,21 @@
       retries: 3
       delay: 1
 
-    - name: Block for stop failures
-      when: "prop_mode.startswith('stop_')"
+    - name: Stop service for start failure tests
+      when: "prop_mode == 'mod_fail'"
+      ansible.builtin.systemd:
+        name: "{{ unit_name }}"
+        force: yes
+        no_block: no
+        state: stopped
+        daemon_reload: yes
+      register: melau_result_systemd
+      until: melau_result_systemd.status.ActiveState != 'active' or ansible_check_mode
+      retries: 3
+      delay: 1
+
+    - name: Block for failures
+      when: "prop_mode.startswith('stop_') or prop_mode == 'mod_fail'"
       block:
         - name: Stop wrong service to left ports open
           when: "prop_mode == 'stop_port'"
@@ -84,6 +115,22 @@
           vars:
             service_name: sshd
             process_pattern: '.*\/bin/{{ unit_name }} .*'
+        - name: Start with too many required checks
+          when: "prop_mode == 'mod_fail'"
+          ansible.builtin.include_role:
+            name: ansible-mega-launch
+            tasks_from: mod-start.yaml
+          vars:
+            service_name: "{{ unit_name }}"
+            port_list:
+              - 9090
+              - 9091
+              - 26656
+              - 26657
+            log_regexp: "{{ regexp_line }}"
+            max_rescues: 2
+            check_retries: 7
+            required_checks: 3
       rescue:
         - name: Set fact to success converge
           ansible.builtin.set_fact:

@@ -8,5 +8,8 @@ max_line_length = 90
 insert_final_newline = true
 trim_trailing_whitespace = true
 
-[{*.md,molecule/prepare.sh}]
+[*.md]
+max_line_length = 555
+
+[molecule/prepare.sh]
 max_line_length = 222
