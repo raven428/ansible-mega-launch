@@ -88,7 +88,7 @@ class ActionModule(ActionBase):
     )
 
     for line in results.get('warning_lines', []):
-      self._display.warning(f'{line}, {results["recent"]} recent')
+      self._display.warning(f'{line}')
 
     # Backwards compat shim for when started/finished were ints,
     # mostly to work with ansible.windows.async_status
