@@ -35,8 +35,11 @@
         log_epoch: "{{ melau_start_epoch | default(omit) }}"
         log_regexp: "{{ log_regexp | default(omit) }}"
       register: melau_result_check
+      # commit examinations in check_mode only for already running service
+      # same as performed in mega_launch module with mod-start.yaml
       until: melau_result_check.passed_checks | default(0) | int >= required_checks |
-        int or ansible_check_mode
+        int or not melau_result_systemd.status.ActiveState == 'active' and
+        ansible_check_mode
       retries: "{{ check_retries }}"
       delay: "{{ retry_delay }}"
 
@@ -47,9 +50,13 @@
         force: yes
         masked: no
         enabled: no
-        no_block: yes
+        no_block: no
         state: stopped
         daemon_reload: yes
+      register: melau_result_systemd
+      until: melau_result_systemd.status.ActiveState != 'active' or ansible_check_mode
+      retries: 3
+      delay: 1
 
     - name: Print retries message
       ansible.builtin.fail:

@@ -157,8 +157,6 @@ def main() -> None:
     supports_check_mode=True,
   )
 
-  module.warn('test warning from module')
-
   jid = module.params['jid']
   mode = module.params['mode']
   unit = module.params['name']
@@ -207,7 +205,6 @@ def main() -> None:
       )
 
   recent = data.get('recent', None)
-  module.warn(f'call {recent} recent')
   journalctl = module.get_bin_path(arg='journalctl', required=True)
   # new_recent = f'{int(time.time() * 10) / 10:.1f}'  # noqa: ERA001
   new_recent = f'{time.time()}'
@@ -220,10 +217,7 @@ def main() -> None:
   warning_lines: list = []
   if out:
     warning_lines = list(filter(None, out.split('\n')))
-
-  module.warn(f'new {new_recent} recent')
   data['recent'] = new_recent
-
   with open(log_path, 'w', encoding='utf-8') as f:  # noqa: PTH123
     json.dump(data, f)
 

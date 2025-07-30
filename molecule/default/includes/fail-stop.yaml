@@ -1,0 +1,50 @@
+---
+- name: Start service for stop failure tests
+  ansible.builtin.systemd:
+    name: "{{ unit_name }}"
+    force: yes
+    no_block: no
+    state: started
+    daemon_reload: yes
+  register: melau_result_systemd
+  until: (melau_result_systemd.status.MainPID | int > 0 and
+    melau_result_systemd.status.ActiveState == 'active') or ansible_check_mode
+  retries: 3
+  delay: 1
+
+- name: Block for failures
+  when: "prop_mode.startswith('stop_')"
+  block:
+    - name: Stop wrong service to left ports open
+      when: "prop_mode == 'stop_port'"
+      ansible.builtin.include_role:
+        name: ansible-mega-launch
+        tasks_from: mega-stop.yaml
+      vars:
+        service_name: "sshd"
+        max_rescues: 2
+        rescue_delay: 1
+        port_list:
+          - 9090
+          - 9091
+          - 26656
+          - 26657
+    - name: Stop wrong service to left process
+      when: "prop_mode == 'stop_proc'"
+      ansible.builtin.include_role:
+        name: ansible-mega-launch
+        tasks_from: mega-stop.yaml
+      vars:
+        service_name: sshd
+        process_pattern: '.*\/bin/{{ unit_name }} .*'
+        max_rescues: 2
+        rescue_delay: 1
+  rescue:
+    - name: Set fact to success converge
+      ansible.builtin.set_fact:
+        rescue_happened: true
+
+- name: Check rescue happened
+  when: "not rescue_happened | default(false)"
+  ansible.builtin.fail:
+    msg: Rescue isn't happened when [{{ prop_mode }}] should failure

@@ -1,0 +1,46 @@
+---
+- name: Start test service with module
+  when: "prop_mode == 'mod_start'"
+  ansible.builtin.include_role:
+    name: ansible-mega-launch
+    tasks_from: mod-start.yaml
+  vars:
+    service_name: "{{ unit_name }}"
+    port_list:
+      - 9090
+      - 9091
+      - 26656
+      - 26657
+    log_regexp: "{{ regexp_line }}"
+    max_rescues: 2
+    check_retries: 11
+    required_checks: 2
+
+- name: Start test service with role
+  when: "prop_mode == 'start'"
+  ansible.builtin.include_role:
+    name: ansible-mega-launch
+    tasks_from: mega-start.yaml
+  vars:
+    service_name: "{{ unit_name }}"
+    port_list:
+      - 9090
+      - 9091
+      - 26656
+      - 26657
+    log_regexp: "{{ regexp_line }}"
+    required_checks: 2
+
+- name: Stop test service with role
+  when: "prop_mode == 'stop'"
+  ansible.builtin.include_role:
+    name: ansible-mega-launch
+    tasks_from: mega-stop.yaml
+  vars:
+    service_name: "{{ unit_name }}"
+    process_pattern: '.*\/bin\/{{ unit_name }} .*'
+    port_list:
+      - 9090
+      - 9091
+      - 26656
+      - 26657

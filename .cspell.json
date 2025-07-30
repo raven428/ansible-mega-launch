@@ -67,6 +67,7 @@
     "tendermint",
     "selectattr",
     "startswith",
+    "endswith",
     "COPYPASTE",
     "elif",
     "sysv",

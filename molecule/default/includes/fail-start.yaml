@@ -1,0 +1,44 @@
+---
+- name: Ensure service for start failure tests
+  ansible.builtin.systemd:
+    name: "{{ unit_name }}"
+    force: yes
+    no_block: no
+    state: "{{ 'started' if prop_mode.startswith('mod_run_') or
+      prop_mode.startswith('start_run_') else 'stopped' }}"
+    daemon_reload: yes
+  register: melau_result_systemd
+  check_mode: false
+  until: "melau_result_systemd.status.ActiveState == ('' if prop_mode.startswith
+    ('mod_run_') or prop_mode.startswith('start_run_') else 'in') + 'active'"
+  retries: 3
+  delay: 1
+
+- name: Block for failures
+  block:
+    - name: Start with too many required checks
+      ansible.builtin.include_role:
+        name: ansible-mega-launch
+        tasks_from: "{{ 'mod-start' if prop_mode.startswith('mod_')
+          else 'mega-start' }}.yaml"
+      vars:
+        service_name: "{{ unit_name }}"
+        port_list:
+          - 9090
+          - 9091
+          - 26656
+          - 26657
+        log_regexp: "{{ regexp_line }}"
+        max_rescues: 2
+        rescue_delay: 1
+        check_retries: 3
+        required_checks: 3
+  rescue:
+    - name: Set fact to success converge
+      ansible.builtin.set_fact:
+        rescue_happened: true
+
+- name: Check rescue happened
+  when: "not rescue_happened | default(false) and not ansible_check_mode"
+  ansible.builtin.fail:
+    msg: Rescue isn't happened when [{{ prop_mode }}] should failure
