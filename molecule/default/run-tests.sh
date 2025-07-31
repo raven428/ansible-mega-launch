@@ -12,7 +12,8 @@ printf "\n\n\nmolecule [create] action\n"
 ANSIBLE_LOG_PATH="${LOG_PATH}-0create" \
   ansible-docker.sh molecule -v create -s "${sce}"
 
-for prop_mode in start stop mod_start start_fail mod_fail start_run_fail mod_run_fail; do
+for prop_mode in start stop mod_start start_non_fail mod_non_fail start_run_fail \
+  mod_run_fail; do
   printf "\n\n\nmolecule [%s] mode [converge] check\n" "${prop_mode}"
   ANSIBLE_LOG_PATH="${LOG_PATH}-${prop_mode}-1check" \
     ansible-docker.sh molecule -v converge -s "${sce}" -- --check \
