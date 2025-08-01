@@ -1,4 +1,12 @@
 ---
 - name: Mega start
   ansible.builtin.include_tasks: "mega-start.yaml"
-  when: "start_enable"
+  when: start_enable
+
+- name: Mega stop
+  ansible.builtin.include_tasks: "mega-stop.yaml"
+  when: stop_enable
+
+- name: Mod start
+  ansible.builtin.include_tasks: "mod-start.yaml"
+  when: start_mod_enable

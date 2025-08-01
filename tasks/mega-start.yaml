@@ -4,6 +4,9 @@
     melau_retry_count: "{{ 1 if melau_retry_count is undefined else melau_retry_count |
       int }}"
 
+- name: Refresh service facts
+  ansible.builtin.service_facts:
+
 - name: Start and check if not started or checks still failed
   block:
     - name: "Try [{{ melau_retry_count }}/{{ max_rescues }}]
@@ -45,6 +48,8 @@
 
   rescue:
     - name: Stop [{{ service_name }}] service # noqa name[template]
+      when: ansible_facts.services[service_name + '.service'].state |
+        default('none') != 'running'
       ansible.builtin.systemd:
         name: "{{ service_name }}"
         force: yes

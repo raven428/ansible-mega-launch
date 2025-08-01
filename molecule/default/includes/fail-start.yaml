@@ -19,9 +19,9 @@
     - name: Start with too many required checks
       ansible.builtin.include_role:
         name: ansible-mega-launch
-        tasks_from: "{{ 'mod-start' if prop_mode.startswith('mod_')
-          else 'mega-start' }}.yaml"
       vars:
+        start_enable: "{{ true if prop_mode.startswith('start_') else false }}"
+        start_mod_enable: "{{ true if prop_mode.startswith('mod_') else false }}"
         service_name: "{{ unit_name }}"
         port_list:
           - 9090

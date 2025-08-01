@@ -3,8 +3,8 @@
   when: "prop_mode == 'mod_start'"
   ansible.builtin.include_role:
     name: ansible-mega-launch
-    tasks_from: mod-start.yaml
   vars:
+    start_mod_enable: yes
     service_name: "{{ unit_name }}"
     port_list:
       - 9090
@@ -20,8 +20,8 @@
   when: "prop_mode == 'start'"
   ansible.builtin.include_role:
     name: ansible-mega-launch
-    tasks_from: mega-start.yaml
   vars:
+    start_enable: yes
     service_name: "{{ unit_name }}"
     port_list:
       - 9090
@@ -35,8 +35,8 @@
   when: "prop_mode == 'stop'"
   ansible.builtin.include_role:
     name: ansible-mega-launch
-    tasks_from: mega-stop.yaml
   vars:
+    stop_enable: yes
     service_name: "{{ unit_name }}"
     process_pattern: '.*\/bin\/{{ unit_name }} .*'
     port_list:

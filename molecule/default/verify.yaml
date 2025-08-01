@@ -2,8 +2,29 @@
 - name: Verify downloaded files
   hosts: all
   gather_facts: false
+  vars:
+    unit_name: gaiad
+    prop_mode: "{{ lookup('ansible.builtin.env', 'ANSIBLE_PROP_MODE', default='none') }}"
   tasks:
-    - name: Converge run was in check_mode
-      ansible.builtin.stat:
-        path: "{{ check_flag }}"
-      register: converge_check
+    - name: Refresh service facts
+      ansible.builtin.service_facts:
+
+    - name: Assert service state
+      ansible.builtin.assert:
+        that: >-
+          {%- set s_state = ansible_facts.services[unit_name + '.service'].state -%}
+          {%- if prop_mode in ('start', 'mod_start', 'start_run_fail', 'mod_run_fail',
+          'stop_proc', 'stop_port') -%}
+            {%- set result = s_state == 'running' -%}
+          {%- elif prop_mode in ('start_non_fail', 'mod_non_fail', 'stop') -%}
+            {%- set result = s_state != 'running' -%}
+          {%- else -%}
+            {%- set result = false -%}
+          {%- endif -%}
+          {{- result | bool -}}
+        fail_msg: >-
+          service [{{ unit_name }}] unexpected [{{ ansible_facts.services[unit_name +
+          '.service'].state }}] state [{{ prop_mode }}] mode
+        success_msg: >-
+          service [{{ unit_name }}] expected [{{ ansible_facts.services[unit_name +
+          '.service'].state }}] state [{{ prop_mode }}] mode
