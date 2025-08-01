@@ -324,7 +324,6 @@ def main() -> None:  # noqa: C901,PLR0912,PLR0914,PLR0915
   fail_if_missing(module, found, unit, msg='host')
   if 'ActiveState' not in result['status']:
     module.fail_json(msg='Service is in unknown state', status=result['status'])
-
   current_retry = 0
   parser = re.compile(module.params['log_regexp'])
   epoch = module.params['epoch']
@@ -333,6 +332,7 @@ def main() -> None:  # noqa: C901,PLR0912,PLR0914,PLR0915
     0,
     getattr(syslog, 'LOG_USER', syslog.LOG_USER),
   )
+  running_before = is_running_service(result)
   while (
     result['passed_checks'] < module.params['required_checks']
     and current_retry < module.params['max_rescues']
@@ -346,15 +346,10 @@ def main() -> None:  # noqa: C901,PLR0912,PLR0914,PLR0915
       f' [{unit}] service',
     )
     service_start_time = time.time() - 1
-
     if not module.check_mode:
       (rc, out, err) = module.run_command(f"{systemctl} start '{unit}'")
       if rc != 0:
         module.fail_json(msg=f'Unable to start service {unit}: {err}')
-
-    if not is_running_service(result):
-      result['changed'] = True
-
     check_epoch = time.time()
     while (
       result['passed_checks'] < module.params['required_checks']
@@ -365,6 +360,7 @@ def main() -> None:  # noqa: C901,PLR0912,PLR0914,PLR0915
         module.fail_json(msg=f'Unable to check service {unit}: {err}')
       result['status'] = parse_systemctl_show(to_native(out).split('\n'))
       if module.check_mode and not is_running_service(result):
+        result['changed'] = True
         module.exit_json(**result)
       result['passed_checks'] = 0
       result['port_list'] = {
@@ -398,7 +394,7 @@ def main() -> None:  # noqa: C901,PLR0912,PLR0914,PLR0915
       )
       time.sleep(module.params['retry_delay'])
     if result['passed_checks'] < module.params['required_checks']:
-      if not module.check_mode:
+      if not module.check_mode and not running_before:
         (rc, out, err) = module.run_command(f"{systemctl} stop '{unit}'")
         if rc != 0:
           module.fail_json(msg=f'Unable to stop service {unit}: {err}')
@@ -416,6 +412,8 @@ def main() -> None:  # noqa: C901,PLR0912,PLR0914,PLR0915
     )
     result['changed'] = False
     module.fail_json(**result)
+  elif not running_before:
+    result['changed'] = True
 
   module.exit_json(**result)
 
