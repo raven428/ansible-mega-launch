@@ -4,8 +4,10 @@
     melau_retry_count: "{{ 1 if melau_retry_count is undefined else melau_retry_count |
       int }}"
 
-- name: Refresh service facts
-  ansible.builtin.service_facts:
+- name: Register service status
+  ansible.builtin.systemd:
+    name: "{{ service_name }}"
+  register: melau_initial_systemd
 
 - name: Start and check if not started or checks still failed
   block:
@@ -41,15 +43,15 @@
       # commit examinations in check_mode only for already running service
       # same as performed in mega_launch module with mod-start.yaml
       until: melau_result_check.passed_checks | default(0) | int >= required_checks |
-        int or not melau_result_systemd.status.ActiveState == 'active' and
-        ansible_check_mode
+        int or melau_result_systemd.status.ActiveState != 'active' and
+        melau_result_systemd.status.SubState != 'running' and ansible_check_mode
       retries: "{{ check_retries }}"
       delay: "{{ retry_delay }}"
 
   rescue:
     - name: Stop [{{ service_name }}] service # noqa name[template]
-      when: ansible_facts.services[service_name + '.service'].state |
-        default('none') != 'running'
+      when: melau_initial_systemd.status.ActiveState != 'active' and
+        melau_initial_systemd.status.SubState != 'running'
       ansible.builtin.systemd:
         name: "{{ service_name }}"
         force: yes
@@ -59,7 +61,8 @@
         state: stopped
         daemon_reload: yes
       register: melau_result_systemd
-      until: melau_result_systemd.status.ActiveState != 'active' or ansible_check_mode
+      until: melau_result_systemd.status.ActiveState != 'active' and
+        melau_result_systemd.status.SubState != 'running' or ansible_check_mode
       retries: 3
       delay: 1
 
