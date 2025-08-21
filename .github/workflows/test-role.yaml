@@ -18,17 +18,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # prop_type:
-        #   - simple_other
-        #   - simple_target
-        #   - simple_controller
-        #   - release_other
-        #   - release_target
-        #   - release_controller
-        #   - compress # (full=remote, split=local)
-        # call_mode:
-        #   - full
-        #   - split
         ansible_ver:
           - "06"
           - "07"
@@ -43,8 +32,6 @@ jobs:
           submodules: true
       - name: test role
         env:
-          # ANSIBLE_PROP_TYPE: ${{ matrix.prop_type }}
-          # ANSIBLE_CALL_MODE: ${{ matrix.call_mode }}
           IMAGE_NAME: ansible-${{ matrix.ansible_ver }}:latest
           ANSIBLE_GITHUB_TOKEN: ${{ secrets.LOCAL_WS_TOKEN }}
         run: molecule/default/run-tests.sh
