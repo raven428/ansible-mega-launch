@@ -10,14 +10,15 @@
     unit: "{{ service_name }}"
     port_list: "{{ port_list | default(omit) }}"
     log_regexp: "{{ log_regexp | default(omit) }}"
-    wait_timeout: "{{ check_retries * retry_delay }}"
+    wait_timeout: "{{ check_retries | int * retry_delay | int }}"
     max_rescues: "{{ max_rescues }}"
     required_checks: "{{ required_checks }}"
     rescue_delay: "{{ rescue_delay }}"
     epoch: "{{ melau_start_epoch }}"
   register: melau_job
   changed_when: false
-  async: "{{ max_rescues * (check_retries + rescue_delay + retry_delay) }}"
+  async: "{{ max_rescues | int * (check_retries | int + rescue_delay | int +
+    retry_delay | int) }}"
   poll: 0
 
 - name: Wait for mega_launch to complete
@@ -27,5 +28,6 @@
     epoch: "{{ melau_start_epoch }}"
   register: mega_launch
   until: mega_launch.finished
-  retries: "{{ max_rescues * (check_retries + rescue_delay + retry_delay) }}"
+  retries: "{{ max_rescues | int * (check_retries | int + rescue_delay | int +
+    retry_delay | int) }}"
   delay: "{{ retry_delay }}"

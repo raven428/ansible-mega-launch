@@ -1,4 +1,23 @@
 ---
+- name: Use vars from dict in precedence
+  ansible.builtin.set_fact:
+    service_name: "{{ melau.service_name | default(service_name) | default(omit) }}"
+    check_retries: "{{ melau.check_retries | default(check_retries) | default(omit) }}"
+    retry_delay: "{{ melau.retry_delay | default(retry_delay) | default(omit) }}"
+    max_rescues: "{{ melau.max_rescues | default(max_rescues) | default(omit) }}"
+    rescue_delay: "{{ melau.rescue_delay | default(rescue_delay) | default(omit) }}"
+    port_list: "{{ melau.port_list | default(port_list) | default(omit) }}"
+    log_regexp: "{{ melau.log_regexp | default(log_regexp) | default(omit) }}"
+    required_checks: "{{ melau.required_checks | default(required_checks) |
+      default(omit) }}"
+    process_pattern: "{{ melau.process_pattern | default(process_pattern) |
+      default(omit) }}"
+    stop_enable: "{{ melau.stop_enable | default(stop_enable) | default(omit) }}"
+    start_enable: "{{ melau.start_enable | default(start_enable) | default(omit) }}"
+    start_mod_enable: "{{ melau.start_mod_enable | default(start_mod_enable) |
+      default(omit) }}"
+    murder_delay: "{{ melau.murder_delay | default(murder_delay) | default(omit) }}"
+
 - name: Mega start
   ansible.builtin.include_tasks: "mega-start.yaml"
   when: start_enable
