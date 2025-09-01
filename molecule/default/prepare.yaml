@@ -51,14 +51,13 @@
       retries: 5
       delay: 2
     - name: Init validator node
-      args:
+      ansible.builtin.shell:
         executable: /bin/bash
-      ansible.builtin.shell: "{{ binary_dir }}/{{ binary_name }} --home='{{
-        service_home }}' init -o --chain-id='{{ network_name }}' '{{ network_name }}
-        validator'
+        cmd: "{{ binary_dir }}/{{ binary_name }} --home='{{ service_home }}' init -o
+          --chain-id='{{ network_name }}' '{{ network_name }} validator'
 
-        {{ binary_dir }}/{{ binary_name }} --home='{{ service_home }}' tendermint
-        unsafe-reset-all"
+          {{ binary_dir }}/{{ binary_name }} --home='{{ service_home }}' tendermint
+          unsafe-reset-all"
       changed_when: false
     - name: Download validator configs
       ansible.builtin.get_url:

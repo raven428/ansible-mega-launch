@@ -211,6 +211,7 @@ def main() -> None:  # noqa: C901,PLR0912,PLR0914,PLR0915
       'port_list': {
         'type': 'list',
         'default': [],
+        'elements': 'int',
         'required': False,
         'aliases': ['port-list'],
       },
