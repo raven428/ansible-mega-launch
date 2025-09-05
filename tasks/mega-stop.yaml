@@ -11,6 +11,12 @@
       ansible.builtin.set_fact:
         melau_stop_epoch: "{{ '%s' | strftime }}"
 
+    - name: Check service unit
+      ansible.builtin.systemd:
+        name: "{{ i.name | default(i.service) | default(i.unit) }}"
+      register: service_check
+      ignore_errors: true
+
     - name: Stop [{{ service_name }}] service # noqa name[template]
       ansible.builtin.systemd:
         name: "{{ service_name }}"
@@ -19,6 +25,9 @@
         no_block: no
         state: stopped
         daemon_reload: yes
+      when:
+        - "'Type' in service_check.status"
+        - "'LoadError' not in service_check.status"
       register: mestop_result_systemd
       until: "mestop_result_systemd.status.ActiveState | default('') != 'active' or
         ansible_check_mode"
