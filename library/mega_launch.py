@@ -122,12 +122,14 @@ import syslog
 import time
 
 # pylint: disable=import-error
-import psutil  # type: ignore[reportMissingImports]
 from ansible.module_utils._text import (  # type: ignore[reportMissingImports]
   to_native,  # noqa: PLC2701
 )
 from ansible.module_utils.basic import (  # type: ignore[reportMissingImports]
   AnsibleModule,
+)
+from ansible.module_utils.mega_launch import (  # type: ignore[reportMissingImports]
+  calc_ports,
 )
 from ansible.module_utils.service import (  # type: ignore[reportMissingImports]
   fail_if_missing,
@@ -135,11 +137,47 @@ from ansible.module_utils.service import (  # type: ignore[reportMissingImports]
 )
 
 
-def is_running_service(service_status: dict) -> bool:
-  status = service_status.get('status')
-  if isinstance(status, dict):
-    return status.get('ActiveState') in {'active', 'activating'}
-  return False
+class ServiceStatus:
+  def __init__(
+    self,
+    unit: str,
+    module: AnsibleModule,
+    systemctl: str | None = None,
+  ) -> None:
+    self.unit = unit
+    self.module = module
+    self.systemctl = systemctl or module.get_bin_path(arg='systemctl', required=True)
+    if module.params.get('scope') != 'system':
+      self.systemctl += f' --{module.params["scope"]}'
+    self.status: dict[str, str] | None = {}
+    self.rc, out, _ = self.module.run_command(f"{self.systemctl} show '{self.unit}'")
+    if self.rc != 0:
+      self.status = None
+    else:
+      self.status = parse_systemctl_show(to_native(out).split('\n'))
+
+  def get(self, key: str, default: str | None = None) -> str | None:
+    if not self.status:
+      return default
+    return self.status.get(key, default)
+
+  def __getitem__(self, key: str) -> str:
+    if not self.status:
+      msg = f'Service [{self.unit}] status not available'
+      raise KeyError(msg)
+    return self.status[key]
+
+  def __contains__(self, key: str) -> bool:
+    if not self.status:
+      return False
+    return key in self.status
+
+  def __bool__(self) -> bool:
+    if not self.status or not isinstance(self.status, dict):
+      return False
+    return self.status.get('SubState') == 'running' \
+      and self.status.get('ActiveState') == 'active' \
+      and int(self.status.get('MainPID') or '0') > 0
 
 
 def request_was_ignored(out: str) -> bool:
@@ -210,14 +248,14 @@ def main() -> None:  # noqa: C901,PLR0912,PLR0914,PLR0915
       },
       'port_list': {
         'type': 'list',
-        'default': [],
+        'default': None,
         'elements': 'int',
         'required': False,
-        'aliases': ['port-list'],
+        'aliases': ['port-list', 'ports', 'port_set', 'port-set'],
       },
       'log_regexp': {
         'type': 'str',
-        'default': '',
+        'default': None,
         'required': False,
         'aliases': ['log-regexp'],
       },
@@ -259,14 +297,17 @@ def main() -> None:  # noqa: C901,PLR0912,PLR0914,PLR0915
     os.environ['XDG_RUNTIME_DIR'] = f'/run/user/{os.geteuid()}'
   if module.params['scope'] != 'system':
     systemctl += f' --{module.params["scope"]}'
+    journalctl += f' --{module.params["scope"]}'
   rc = 0
   out = err = ''
   result: dict = {
     'changed': False,
     'passed_checks': 0,
-    'port_list': [],
+    'ports': set(),
     'matched_lines': [],
   }
+
+  # systemd_service from Ansible part begin
   found = False
   if unit:
     is_initd = sysv_exists(unit)
@@ -324,56 +365,53 @@ def main() -> None:  # noqa: C901,PLR0912,PLR0914,PLR0915
       )
   fail_if_missing(module, found, unit, msg='host')
   if 'ActiveState' not in result['status']:
-    module.fail_json(msg='Service is in unknown state', status=result['status'])
+    module.fail_json(msg='Unknown service state', status=result['status'])
+  # systemd_service from Ansible part end
+
   current_retry = 0
-  parser = re.compile(module.params['log_regexp'])
+  log_regexp = module.params.get('log_regexp')
+  parser = re.compile(log_regexp) if log_regexp else None
   epoch = module.params['epoch']
   syslog.openlog(
     f'mega-launch-{unit}{"" if epoch is None else f"-{epoch}"}',
     0,
     getattr(syslog, 'LOG_USER', syslog.LOG_USER),
   )
-  running_before = is_running_service(result)
+  running_before = ServiceStatus(unit, module)
   while (
     result['passed_checks'] < module.params['required_checks']
     and current_retry < module.params['max_rescues']
   ):
     current_retry += 1
     result['passed_checks'] = 0
+    service_start_time = time.time() - 1
+    if not module.check_mode:
+      (rc, out, err) = module.run_command(f"{systemctl} start '{unit}'")
+      if rc != 0:
+        module.fail_json(msg=f'Unable to start service {unit}: {err}')
+    running_service = ServiceStatus(unit, module)
+    if not running_service:
+      if module.check_mode:
+        result['changed'] = True
+        module.exit_json(**result)
+      else:
+        module.fail_json(msg=f'Service {unit} unable to start')
     syslog.syslog(
       syslog.LOG_INFO,
       f'retry [{current_retry}/{module.params["max_rescues"]}] '
       f'{"check_mode" if module.check_mode else "start"}'
       f' [{unit}] service',
     )
-    service_start_time = time.time() - 1
-    if not module.check_mode:
-      (rc, out, err) = module.run_command(f"{systemctl} start '{unit}'")
-      if rc != 0:
-        module.fail_json(msg=f'Unable to start service {unit}: {err}')
     check_epoch = time.time()
     while (
       result['passed_checks'] < module.params['required_checks']
-      and time.time() - check_epoch < wait_timeout
+      and time.time() - check_epoch < wait_timeout and running_service
     ):
-      (rc, out, err) = module.run_command(f"{systemctl} show '{unit}'")
-      if rc != 0:
-        module.fail_json(msg=f'Unable to check service {unit}: {err}')
-      result['status'] = parse_systemctl_show(to_native(out).split('\n'))
-      if module.check_mode and not is_running_service(result):
-        result['changed'] = True
-        module.exit_json(**result)
-      result['passed_checks'] = 0
-      result['port_list'] = {
-        laddr.port
-        for laddr in [
-          conn.laddr
-          for conn in psutil.Process(int(result['status']['MainPID'])).connections()
-          if conn.status == psutil.CONN_LISTEN
-        ]
-      }
-      result['passed_checks'] += int(
-        set(module.params['port_list']).issubset(result['port_list']),
+      running_service = ServiceStatus(unit, module)
+      result['passed_checks'] = calc_ports(
+        main_pid=int(running_service.get('MainPID', '0') or '0'),
+        result_ports=result['ports'],
+        module_ports=set(module.params.get('port_list', [])),
       )
       (rc, out, err) = module.run_command(
         f"{journalctl} -t '{unit}' -S '@{service_start_time:0.3f}' -o short-iso",
@@ -381,7 +419,7 @@ def main() -> None:  # noqa: C901,PLR0912,PLR0914,PLR0915
       if rc != 0:
         module.fail_json(msg=f"Unable journalctl -t '{unit}': {err}")
       log_exp_matched = False
-      if out:
+      if out and parser:
         for line in to_native(out).split('\n'):
           if parser.match(line):
             result['matched_lines'].append(line)
@@ -394,6 +432,7 @@ def main() -> None:  # noqa: C901,PLR0912,PLR0914,PLR0915
         f'{result["passed_checks"]}/{module.params["required_checks"]}] checks',
       )
       time.sleep(module.params['retry_delay'])
+    syslog.syslog(syslog.LOG_INFO, 'loop 2 exit')
     if result['passed_checks'] < module.params['required_checks']:
       if not module.check_mode and not running_before:
         (rc, out, err) = module.run_command(f"{systemctl} stop '{unit}'")
@@ -415,7 +454,7 @@ def main() -> None:  # noqa: C901,PLR0912,PLR0914,PLR0915
     module.fail_json(**result)
   elif not running_before:
     result['changed'] = True
-
+  syslog.closelog()
   module.exit_json(**result)
 
 

@@ -95,19 +95,20 @@ matched_lines:
 import os
 import re
 import time
-from typing import Any
 
 # pylint: disable=import-error
-import psutil  # type: ignore[reportMissingModuleSource]
 from ansible.module_utils._text import (  # type: ignore[reportMissingImports]
   to_native,  # noqa: PLC2701
 )
 from ansible.module_utils.basic import (  # type: ignore[reportMissingImports]
   AnsibleModule,
 )
+from ansible.module_utils.mega_launch import (  # type: ignore[reportMissingImports]
+  calc_ports,
+)
 
 
-def main() -> None:  # noqa: C901, PLR0912
+def main() -> None:
   module = AnsibleModule(
     argument_spec={
       'name': {
@@ -132,7 +133,7 @@ def main() -> None:  # noqa: C901, PLR0912
         'default': None,
         'elements': 'int',
         'required': False,
-        'aliases': ['port-list'],
+        'aliases': ['port-list', 'ports', 'port_set', 'port-set'],
       },
       'log_epoch': {
         'type': 'int',
@@ -158,38 +159,20 @@ def main() -> None:  # noqa: C901, PLR0912
           f'[{globpattern}] in [{unit}] service'
         ),
       )
-  result: dict[str, Any] = {
+  result: dict = {
     'changed': False,
     'passed_checks': 0,
-    'port_list': [],
+    'ports': set(),
     'matched_lines': [],
   }
-  if module.params['port_list'] is not None:
-    module.params['port_list'] = list(map(int, module.params['port_list']))
-    if module.params['main_pid'] is None or module.params['main_pid'] == 0:
-      result['port_list'] = {
-        sc.laddr.port  # type: ignore[reportAttributeAccessIssue]
-        for sc in psutil.net_connections() if sc.status == 'LISTEN'
-      }
-      if set(module.params['port_list']).intersection(set(result['port_list'])):
-        result['port_list'] = set(  # avoid yapf unwrapping
-          module.params['port_list'],
-        ).intersection(set(result['port_list']))
-      else:
-        result['passed_checks'] += 1
-    else:
-      result['port_list'] = {
-        laddr.port
-        for laddr in [
-          conn.laddr for conn in psutil.Process(module.params['main_pid']).connections()
-          if conn.status == psutil.CONN_LISTEN
-        ]
-      }
-      result['passed_checks'] += int(
-        set(module.params['port_list']).issubset(set(result['port_list'])),
-      )
-  if module.params['log_regexp'] is not None:
-    journalctl = module.get_bin_path('journalctl', True)  # noqa: FBT003
+  if module.params.get('port_list'):
+    result['passed_checks'] = calc_ports(
+      main_pid=int(module.params.get('main_pid', 0)),
+      result_ports=result['ports'],
+      module_ports=set(module.params.get('port_list', [])),
+    )
+  if module.params.get('log_regexp'):
+    journalctl = module.get_bin_path('journalctl', required=True)
     if os.getenv('XDG_RUNTIME_DIR') is None:
       os.environ['XDG_RUNTIME_DIR'] = f'/run/user/{os.geteuid()}'
     command = "{} -t '{}' -S '{}' -o short".format(
