@@ -19,7 +19,8 @@
           {%- if prop_mode in ('start', 'mod_start', 'start_run_fail', 'mod_run_fail',
           'stop_proc', 'stop_port') -%}
             {%- set result = s_state -%}
-          {%- elif prop_mode in ('start_non_fail', 'mod_non_fail', 'stop') -%}
+          {%- elif prop_mode in ('start_non_fail', 'mod_non_fail', 'stop',
+          'mod_zero_fail', 'start_zero_fail') -%}
             {%- set result = not s_state -%}
           {%- else -%}
             {%- set result = false -%}

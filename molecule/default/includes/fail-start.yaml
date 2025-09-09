@@ -14,6 +14,14 @@
   retries: 3
   delay: 1
 
+- name: Remove part of config for crashes at launch
+  ansible.builtin.shell:
+    executable: /bin/bash
+    cmd: /usr/bin/env mv -f '{{ service_home }}/data/priv_validator_state.json'
+      '{{ service_home }}/data/priv_validator_state.json1'
+  changed_when: false
+  when: "prop_mode.endswith('_zero_fail')"
+
 - name: Block for failures
   block:
     - name: Start with too many required checks
@@ -42,3 +50,22 @@
   when: "not rescue_happened | default(false) and not ansible_check_mode"
   ansible.builtin.fail:
     msg: Rescue isn't happened when [{{ prop_mode }}] should failure
+
+- name: Test debug
+  ansible.builtin.debug:
+    var: melau_result_check
+
+- name: Assert rescue happened
+  ansible.builtin.assert:
+    that: rescue_happened | default(false) and mega_launch.stderr_lines |
+      default([]) | length == 0 or ansible_check_mode
+    fail_msg: Rescue [{{ prop_mode }}] should failure
+    success_msg: Rescue [{{ prop_mode }}] happened
+
+- name: Return part of config to avoid crashes
+  ansible.builtin.shell:
+    executable: /bin/bash
+    cmd: /usr/bin/env mv -f '{{ service_home }}/data/priv_validator_state.json1'
+      '{{ service_home }}/data/priv_validator_state.json'
+  changed_when: false
+  when: "prop_mode.endswith('_zero_fail')"
