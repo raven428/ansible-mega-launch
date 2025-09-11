@@ -60,6 +60,7 @@
         no_block: no
         state: stopped
         daemon_reload: yes
+      changed_when: false
       register: melau_result_systemd
       until: melau_result_systemd.status.ActiveState != 'active' and
         melau_result_systemd.status.SubState != 'running' or ansible_check_mode
