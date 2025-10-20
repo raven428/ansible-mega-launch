@@ -4,6 +4,23 @@
 
 The role performs a service launch or stop with a few of checks after with a few restarts or force kill in case of failure
 
+## Role release to Ansible galaxy
+
+- clone me:
+
+  ```bash
+  git clone --recursive \
+  git@github.com:raven428/ansible-mega-launch.git \
+  ansible-mega-launch
+  ```
+
+- make tag and send to release:
+
+  ```bash
+  export VER=v1.0.0 && git checkout master && git pull
+  git tag -fm $(git branch --sho) ${VER} && git push --force origin $(git describe)
+  ```
+
 ## Start service
 
 See [an example](molecule/default/includes/success-all.yaml#L19-L32) from role unit-test. This includes:
