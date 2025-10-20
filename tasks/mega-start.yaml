@@ -19,11 +19,11 @@
     - name: Start [{{ service_name }}] service # noqa name[template]
       ansible.builtin.systemd:
         name: "{{ service_name }}"
-        force: yes
-        masked: no
-        no_block: no
+        force: true
+        masked: false
+        no_block: false
         state: started
-        daemon_reload: yes
+        daemon_reload: true
       register: melau_result_systemd
       until: (melau_result_systemd.status.MainPID | int > 0 and
         melau_result_systemd.status.ActiveState == 'active') or ansible_check_mode
@@ -54,12 +54,12 @@
         melau_initial_systemd.status.SubState != 'running'
       ansible.builtin.systemd:
         name: "{{ service_name }}"
-        force: yes
-        masked: no
-        enabled: no
-        no_block: no
+        force: true
+        masked: false
+        enabled: false
+        no_block: false
         state: stopped
-        daemon_reload: yes
+        daemon_reload: true
       changed_when: false
       register: melau_result_systemd
       until: melau_result_systemd.status.ActiveState != 'active' and

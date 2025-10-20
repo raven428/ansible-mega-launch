@@ -8,7 +8,7 @@ rescue_delay: 3
 # log_regexp: None
 required_checks: 2
 # process_pattern: None
-stop_enable: no
-start_enable: no
-start_mod_enable: no
+stop_enable: false
+start_enable: false
+start_mod_enable: false
 murder_delay: 2

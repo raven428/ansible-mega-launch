@@ -2,11 +2,11 @@
 - name: Ensure service for start failure tests
   ansible.builtin.systemd:
     name: "{{ unit_name }}"
-    force: yes
-    no_block: no
+    force: true
+    no_block: false
     state: "{{ 'started' if prop_mode.startswith('mod_run_') or
       prop_mode.startswith('start_run_') else 'stopped' }}"
-    daemon_reload: yes
+    daemon_reload: true
   register: melau_result_systemd
   check_mode: false
   until: "melau_result_systemd.status.ActiveState == ('' if prop_mode.startswith
