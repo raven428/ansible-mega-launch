@@ -4,7 +4,7 @@
   ansible.builtin.include_role:
     name: ansible-mega-launch
   vars:
-    start_mod_enable: yes
+    start_mod_enable: true
     service_name: "{{ unit_name }}"
     port_list:
       - "9090"
@@ -21,7 +21,7 @@
   ansible.builtin.include_role:
     name: ansible-mega-launch
   vars:
-    start_enable: yes
+    start_enable: true
     service_name: "{{ unit_name }}"
     port_list:
       - "9090"
@@ -36,7 +36,7 @@
   ansible.builtin.include_role:
     name: ansible-mega-launch
   vars:
-    stop_enable: yes
+    stop_enable: true
     service_name: "{{ unit_name }}"
     process_pattern: '.*\/bin\/{{ unit_name }} .*'
     port_list:

@@ -14,11 +14,11 @@
     - name: Stop [{{ service_name }}] service # noqa name[template]
       ansible.builtin.systemd:
         name: "{{ service_name }}"
-        force: yes
-        enabled: no
-        no_block: no
+        force: true
+        enabled: false
+        no_block: false
         state: stopped
-        daemon_reload: yes
+        daemon_reload: true
       register: mestop_result_systemd
       until: "mestop_result_systemd.status.ActiveState | default('') != 'active' or
         ansible_check_mode"
