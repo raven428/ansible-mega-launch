@@ -17,7 +17,7 @@ The role performs a service launch or stop with a few of checks after with a few
 - make tag and send to release:
 
   ```bash
-  export VER=v1.0.0 && git checkout master && git pull
+  export VER='1.0.1' && git checkout master && git pull
   git tag -fm $(git branch --sho) ${VER} && git push --force origin $(git describe)
   ```
 
