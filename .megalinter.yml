@@ -54,3 +54,7 @@ PYTHON_PYLINT_PRE_COMMANDS:
 PYTHON_PYRIGHT_PRE_COMMANDS:
   - command: "pip install ansible-core --quiet"
     cwd: root
+SPELL_CSPELL_PRE_COMMANDS:
+  - command: "npm install --prefix /node-deps @cspell/dict-ru_ru
+      @cspell/dict-software-terms"
+    cwd: root
