@@ -96,13 +96,10 @@ import os
 import re
 import time
 
-# pylint: disable=import-error
-from ansible.module_utils._text import (  # type: ignore[reportMissingImports]
-  to_native,  # noqa: PLC2701
-)
-from ansible.module_utils.basic import (  # type: ignore[reportMissingImports]
-  AnsibleModule,
-)
+from ansible.module_utils.basic import AnsibleModule
+from ansible.module_utils.common.text.converters import to_native
+
+# pylint: disable=import-error,disable=no-name-in-module
 from ansible.module_utils.mega_launch import (  # type: ignore[reportMissingImports]
   calc_ports,
 )

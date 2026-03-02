@@ -121,17 +121,14 @@ import re
 import syslog
 import time
 
-# pylint: disable=import-error
-from ansible.module_utils._text import (  # type: ignore[reportMissingImports]
-  to_native,  # noqa: PLC2701
-)
-from ansible.module_utils.basic import (  # type: ignore[reportMissingImports]
-  AnsibleModule,
-)
+from ansible.module_utils.basic import AnsibleModule
+from ansible.module_utils.common.text.converters import to_native
+
+# pylint: disable=import-error,no-name-in-module
 from ansible.module_utils.mega_launch import (  # type: ignore[reportMissingImports]
   calc_ports,
 )
-from ansible.module_utils.service import (  # type: ignore[reportMissingImports]
+from ansible.module_utils.service import (
   fail_if_missing,
   sysv_exists,
 )
@@ -146,7 +143,9 @@ class ServiceStatus:
   ) -> None:
     self.unit = unit
     self.module = module
-    self.systemctl = systemctl or module.get_bin_path(arg='systemctl', required=True)
+    self.systemctl: str = (
+      systemctl or module.get_bin_path(arg='systemctl', required=True) or ''
+    )
     if module.params.get('scope') != 'system':
       self.systemctl += f' --{module.params["scope"]}'
     self.status: dict[str, str] | None = {}
@@ -291,8 +290,8 @@ def main() -> None:  # noqa: C901,PLR0912,PLR0914,PLR0915
           msg='This module does not currently support using glob patterns, found '
           f'[{globpattern}] in [{unit}] service',
         )
-  systemctl = module.get_bin_path(arg='systemctl', required=True)
-  journalctl = module.get_bin_path(arg='journalctl', required=True)
+  systemctl: str = module.get_bin_path(arg='systemctl', required=True) or ''
+  journalctl: str = module.get_bin_path(arg='journalctl', required=True) or ''
   if os.getenv('XDG_RUNTIME_DIR') is None:
     os.environ['XDG_RUNTIME_DIR'] = f'/run/user/{os.geteuid()}'
   if module.params['scope'] != 'system':
@@ -370,7 +369,7 @@ def main() -> None:  # noqa: C901,PLR0912,PLR0914,PLR0915
 
   current_retry = 0
   log_regexp = module.params.get('log_regexp')
-  parser = re.compile(log_regexp) if log_regexp else None
+  parser: re.Pattern[str] | None = re.compile(log_regexp) if log_regexp else None
   epoch = module.params['epoch']
   syslog.openlog(
     f'mega-launch-{unit}{"" if epoch is None else f"-{epoch}"}',
