@@ -48,3 +48,9 @@ REPOSITORY_DEVSKIM_ARGUMENTS:
 ANSIBLE_ANSIBLE_LINT_ARGUMENTS: "-f pep8 --force-color"
 ANSIBLE_ANSIBLE_LINT_COMMAND_REMOVE_ARGUMENTS: "-v"
 REPOSITORY_KINGFISHER_ARGUMENTS: "--exclude .git"
+PYTHON_PYLINT_PRE_COMMANDS:
+  - command: "/venvs/pylint/bin/pip install ansible-core --quiet"
+    cwd: root
+PYTHON_PYRIGHT_PRE_COMMANDS:
+  - command: "pip install ansible-core --quiet"
+    cwd: root
