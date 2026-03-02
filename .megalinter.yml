@@ -48,9 +48,29 @@ REPOSITORY_DEVSKIM_ARGUMENTS:
 ANSIBLE_ANSIBLE_LINT_ARGUMENTS: "-f pep8 --force-color"
 ANSIBLE_ANSIBLE_LINT_COMMAND_REMOVE_ARGUMENTS: "-v"
 REPOSITORY_KINGFISHER_ARGUMENTS: "--exclude .git"
+ANSIBLE_ANSIBLE_LINT_PRE_COMMANDS:
+  - command: |
+      which ansible ansible-lint
+      source /venvs/ansible-lint/bin/activate
+      VER="$(python3 -c "import ansible; print(ansible.__version__)")"
+      /venvs/ansible-lint/bin/pip install pytest PyYAML ansible-core==$VER jinja2
+    cwd: root
 PYTHON_PYLINT_PRE_COMMANDS:
-  - command: "/venvs/pylint/bin/pip install ansible-core --quiet"
+  - command: |
+      which ansible pylint
+      source /venvs/ansible-lint/bin/activate
+      VER="$(python3 -c "import ansible; print(ansible.__version__)")"
+      /venvs/pylint/bin/pip install pytest PyYAML ansible-core==$VER jinja2
     cwd: root
 PYTHON_PYRIGHT_PRE_COMMANDS:
-  - command: "pip install ansible-core --quiet"
+  - command: |
+      which ansible pyright
+      source /venvs/ansible-lint/bin/activate
+      VER="$(python3 -c "import ansible; print(ansible.__version__)")"
+      deactivate
+      pip install pytest PyYAML ansible-core==$VER jinja2
+    cwd: root
+SPELL_CSPELL_PRE_COMMANDS:
+  - command: "npm install --prefix /node-deps @cspell/dict-ru_ru
+      @cspell/dict-software-terms"
     cwd: root
