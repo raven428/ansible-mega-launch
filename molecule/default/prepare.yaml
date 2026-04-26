@@ -1,33 +1,20 @@
 ---
-- name: Prepare controller
-  hosts: localhost # DevSkim: ignore DS162092
-  connection: local
-  gather_facts: false
-  no_log: "{{ molecule_no_log }}"
-  vars:
-    roles_dir: "{{ lookup('env', 'ANSIBLE_ROLES_PATH').split(':')[-1] }}"
-  tasks:
-    - name: Create molecule roles directory
-      ansible.builtin.file:
-        path: "{{ roles_dir }}"
-        state: directory
-        force: true
-        recurse: true
-    - name: Symbolic link to role
-      ansible.builtin.file:
-        src: /ansible
-        dest: "{{ roles_dir }}/ansible-mega-launch"
-        state: link
-        force: true
-
 - name: Prepare targets
   hosts: all
+  gather_facts: false
   vars:
     binary_dir: "/usr/local/bin"
     binary_name: "gaiad"
     network_name: "launcher"
-    source_files: "/ansible/molecule/default/files"
+    source_files: "files"
   tasks:
+    - name: Wait for container to be ready
+      ansible.builtin.raw: systemctl is-active basic.target
+      register: _wait_result
+      until: _wait_result.rc == 0
+      retries: 33
+      delay: 1
+      changed_when: false
     - name: Create directory for binary
       ansible.builtin.file:
         path: "{{ dir }}"
