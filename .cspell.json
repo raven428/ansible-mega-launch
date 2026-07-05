@@ -81,6 +81,8 @@
     "tmpfs",
     "Tunables",
     "userns",
+    "zizmor",
+    "ZIZMOR",
     "venvs"
   ],
   "dictionaryDefinitions": [

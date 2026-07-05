@@ -74,3 +74,5 @@ SPELL_CSPELL_PRE_COMMANDS:
   - command: "npm install --prefix /node-deps @cspell/dict-ru_ru
       @cspell/dict-software-terms"
     cwd: root
+ACTION_ZIZMOR_UNSECURED_ENV_VARIABLES:
+  - GITHUB_TOKEN
