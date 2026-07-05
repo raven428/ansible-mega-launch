@@ -18,7 +18,9 @@
     "**/*.svg",
     "**/*.zip",
     "**/*.bin",
+    "library/mega_launch.py",
     "library/mega_status.py",
+    "library/check_service.py",
     "action_plugins/mega_status.py"
   ]
 }
