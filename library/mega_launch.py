@@ -281,7 +281,7 @@ def main() -> None:  # noqa: C901,PLR0912,PLR0914,PLR0915
     },
     supports_check_mode=True,
   )
-  unit = module.params['name']
+  unit: str = module.params['name']
   wait_timeout = module.params['wait_timeout']
   if unit is not None:
     for globpattern in (r'*', r'?', r'['):
