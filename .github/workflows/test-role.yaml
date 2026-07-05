@@ -27,6 +27,7 @@ on:
         description: "ansible-mega-service branch/tag/SHA to test against"
         required: false
         default: ""
+permissions: {}
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 jobs:
@@ -45,10 +46,11 @@ jobs:
           - "10"
           - "11"
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7 # zizmor: ignore[unpinned-uses]
         with:
           fetch-depth: 0
           submodules: true
+          persist-credentials: false
       - name: test role
         env:
           APPIMAGE_NAME: "ansible-${{ matrix.ansible_ver }}-001.AppImage"
@@ -61,10 +63,11 @@ jobs:
     runs-on: ubuntu-24.04
     if: github.event_name != 'workflow_dispatch'
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7 # zizmor: ignore[unpinned-uses]
         with:
           fetch-depth: 0
           submodules: true
+          persist-credentials: false
       - name: lint the repo
         env:
           BRA: master
@@ -81,12 +84,13 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name != 'workflow_dispatch'
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7 # zizmor: ignore[unpinned-uses]
         with:
           fetch-depth: 0
           submodules: true
+          persist-credentials: false
       - name: MegaLinter
-        uses: oxsecurity/megalinter@v9
+        uses: oxsecurity/megalinter@v9 # zizmor: ignore[unpinned-uses]
         env:
           VALIDATE_ALL_CODEBASE: true
   mega_service:
@@ -119,7 +123,7 @@ jobs:
       checks: read
     steps:
       - name: waiting for checks success
-        uses: poseidon/wait-for-status-checks@v0.6.0
+        uses: poseidon/wait-for-status-checks@v0.6.0 # zizmor: ignore[unpinned-uses]
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           ignore: all green, foobar
