@@ -14,18 +14,22 @@ on:
       mega_var_ref:
         description: "ansible-mega-var branch/tag to test against"
         required: false
+        type: string
         default: ""
       mini_vault_ref:
         description: "ansible-mini-vault branch/tag/SHA to test against"
         required: false
+        type: string
         default: ""
       mega_launch_ref:
         description: "ansible-launch-var branch/tag to test against"
         required: false
+        type: string
         default: ""
       mega_service_ref:
         description: "ansible-mega-service branch/tag/SHA to test against"
         required: false
+        type: string
         default: ""
 permissions: {}
 env:
@@ -77,7 +81,7 @@ jobs:
           env.BRA }}/sources/linters-ubuntu-22_04/check-dir.sh | bash
           curl -sL \
           https://raw.githubusercontent.com/raven428/container-images/refs/heads/${{
-          env.BRA }}/sources/ansible-ubuntu/check-dir.sh | bash
+          env.BRA }}/_shared/install/ansible/check-dir.sh | bash
   MegaLinter:
     name: MegaLinter
     timeout-minutes: 11
