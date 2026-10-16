@@ -57,7 +57,7 @@ jobs:
           persist-credentials: false
       - name: test role
         env:
-          APPIMAGE_NAME: "ansible-${{ matrix.ansible_ver }}-001.AppImage"
+          APPIMAGE_NAME: "ansible-${{ matrix.ansible_ver }}-005.AppImage"
           ANSIBLE_GITHUB_TOKEN: ${{ secrets.LOCAL_WS_TOKEN }}
           MEGA_VAR_REF: ${{ inputs.mega_var_ref }}
         run: molecule/default/run-tests.sh
