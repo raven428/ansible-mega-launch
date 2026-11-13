@@ -34,6 +34,9 @@ on:
 permissions: {}
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   default:
     name: t
@@ -100,12 +103,13 @@ jobs:
   mega_service:
     name: test mega-service role
     timeout-minutes: 11
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs:
       - default
       - linters
       - MegaLinter
-    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+    if: "${{ !cancelled() && !failure() && (github.event_name == 'pull_request' ||
+      github.event_name == 'workflow_dispatch') }}"
     steps:
       - name: trigger for mega-service role test
         env:
@@ -120,15 +124,16 @@ jobs:
   all-green:
     name: all green
     timeout-minutes: 5
-    runs-on: ubuntu-latest
-    needs: mega_service
-    if: github.event_name == 'pull_request'
-    permissions:
-      checks: read
+    runs-on: ubuntu-24.04
+    needs:
+      - default
+      - linters
+      - MegaLinter
+      - mega_service
+    if: ${{ always() && github.event_name == 'pull_request' }}
     steps:
-      - name: waiting for checks success
-        uses: poseidon/wait-for-status-checks@v0.6.0 # zizmor: ignore[unpinned-uses]
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          ignore: all green, foobar
-          timeout: 111s
+      - name: Check dependencies
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          echo "$NEEDS" | jq -e 'all(.[]; .result == "success")'
