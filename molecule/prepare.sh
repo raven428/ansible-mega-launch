@@ -12,7 +12,7 @@ export DEBIAN_FRONTEND=noninteractive
   /usr/bin/env sudo apt-get update &&
     /usr/bin/env sudo su -c 'DEBIAN_FRONTEND=noninteractive apt-get install -y moreutils'
 }
-_gh_base='https://github.com/raven428/container-images/releases'
+_gh_base='https://github.com/megalomania428/container-images/releases'
 _appimage_bin="${HOME}/bin/ansible-current.AppImage"
 if [[ ! -x "${_appimage_bin}" ]]; then
   if [[ "${APPIMAGE_RELEASE}" == 'latest' ]]; then
