@@ -34,6 +34,8 @@ on:
 permissions: {}
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  MEGA_VAR_REF: ${{ inputs.mega_var_ref }}
+  MEGA_SERVICE_REF: ${{ inputs.mega_service_ref }}
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -62,7 +64,6 @@ jobs:
         env:
           ANSIBLE_VER: "${{ matrix.ansible_ver }}"
           ANSIBLE_GITHUB_TOKEN: ${{ secrets.LOCAL_WS_TOKEN }}
-          MEGA_VAR_REF: ${{ inputs.mega_var_ref }}
         run: molecule/default/run-tests.sh
   linters:
     name: linters
