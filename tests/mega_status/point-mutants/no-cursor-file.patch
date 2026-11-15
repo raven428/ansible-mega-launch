@@ -1,0 +1,4 @@
+--- a/library/mega_status.py
++++ b/library/mega_status.py
+@@ -220 +219,0 @@
+-      f'--cursor-file={cursor_path}',

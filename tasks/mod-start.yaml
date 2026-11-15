@@ -1,7 +1,10 @@
 ---
-- name: Set start epoch variable
+- name: Set start epoch and async budget variables
   ansible.builtin.set_fact:
     melau_start_epoch: "{{ '%Y%m%dT%H%M%S' | strftime }}"
+    # seconds per rescue: checks, rescue delay and 5 s margin
+    melau_async_budget: "{{ max_rescues | int * (check_retries | int * retry_delay | int
+      + rescue_delay | int + 5) }}"
 
 - name: Starting unit [{{ service_name }}] checking ports [{{ port_list | join(',') }}]
     matches [{{ log_regexp | default(None) }}] log [{{ required_checks }}]
@@ -14,11 +17,11 @@
     max_rescues: "{{ max_rescues }}"
     required_checks: "{{ required_checks }}"
     rescue_delay: "{{ rescue_delay }}"
+    retry_delay: "{{ retry_delay }}"
     epoch: "{{ melau_start_epoch }}"
   register: melau_job
   changed_when: false
-  async: "{{ max_rescues | int * (check_retries | int + rescue_delay | int +
-    retry_delay | int) }}"
+  async: "{{ melau_async_budget | int }}"
   poll: 0
 
 - name: Wait for mega_launch to complete
@@ -28,6 +31,7 @@
     epoch: "{{ melau_start_epoch }}"
   register: mega_launch
   until: mega_launch.finished
-  retries: "{{ max_rescues | int * (check_retries | int + rescue_delay | int +
-    retry_delay | int) }}"
+  # polls cover the budget, 5 s watchdog step of async_wrapper and 3 spare attempts
+  retries: "{{ ((melau_async_budget | int + 5) / retry_delay | int) | round(0, 'ceil')
+    | int + 3 }}"
   delay: "{{ retry_delay }}"

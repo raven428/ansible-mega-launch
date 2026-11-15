@@ -1,0 +1,5 @@
+--- a/library/mega_status.py
++++ b/library/mega_status.py
+@@ -236,2 +235,0 @@
+-    with contextlib.suppress(FileNotFoundError):
+-      os.unlink(cursor_path)  # noqa: PTH108

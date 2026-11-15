@@ -31,6 +31,9 @@ options:
 notes:
   - The RV(started) and RV(finished) return values were updated to return V(True) or
       V(False) instead of V(1) or V(0) in ansible-core 2.19.
+  - Requires systemd 242 or newer on the target, the journal position is kept by
+      C(journalctl --cursor-file) in the C(<job file>.cursor) file next to the job file.
+      The V(1) exit code of C(journalctl) without output means no new records.
 extends_documentation_fragment:
 - action_common_attributes
 - action_common_attributes.flow
@@ -111,9 +114,9 @@ erased:
   type: str
 '''
 
+import contextlib
 import json
 import os
-import time
 
 # pylint: disable=import-error
 from ansible.module_utils.basic import (  # type: ignore[reportMissingImports]
@@ -165,6 +168,7 @@ def main() -> None:
 
   # setup logging directory
   log_path = os.path.join(async_dir, jid)  # noqa: PTH118
+  cursor_path = f'{log_path}.cursor'
 
   if not os.path.exists(log_path):  # noqa: PTH110
     module.fail_json(
@@ -176,6 +180,8 @@ def main() -> None:
 
   if mode == 'cleanup':
     os.unlink(log_path)  # noqa: PTH108
+    with contextlib.suppress(FileNotFoundError):
+      os.unlink(cursor_path)  # noqa: PTH108
     module.exit_json(ansible_job_id=jid, erased=log_path)
 
   # NOT in cleanup mode, assume regular status mode
@@ -204,28 +210,31 @@ def main() -> None:
         finished=True,
       )
 
-  recent = data.get('recent', None)
   journalctl = module.get_bin_path(arg='journalctl', required=True)
-  # new_recent = f'{int(time.time() * 10) / 10:.1f}'  # noqa: ERA001
-  new_recent = f'{time.time()}'
+  # keep journal position in a sidecar file, the job file belongs to async_wrapper only
   (rc, out, err) = module.run_command(
-    f"{journalctl} -t 'mega-launch-{unit}{'' if epoch is None else f'-{epoch}'}'" +
-    ('' if recent is None else f" -S '@{recent}'") + ' -o cat',
+    [
+      journalctl,
+      '-t',
+      f"mega-launch-{unit}{'' if epoch is None else f'-{epoch}'}",
+      f'--cursor-file={cursor_path}',
+      '-o',
+      'cat',
+    ],
+    expand_user_and_vars=False,
   )
-  if rc != 0:
+  if rc != 0 and (rc != 1 or out or err):
     module.fail_json(msg=f"Unable journalctl -t '{unit}': {err}")
   warning_lines: list = []
   if out:
     warning_lines = list(filter(None, out.split('\n')))
-  data['recent'] = new_recent
-  with open(log_path, 'w', encoding='utf-8') as f:  # noqa: PTH123
-    json.dump(data, f)
-
   data['warning_lines'] = warning_lines
   if 'started' not in data:
     data['finished'] = True
     del data['warning_lines']
     data['ansible_job_id'] = jid
+    with contextlib.suppress(FileNotFoundError):
+      os.unlink(cursor_path)  # noqa: PTH108
   elif 'finished' not in data:
     data['finished'] = False
 

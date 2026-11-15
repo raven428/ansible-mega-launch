@@ -41,9 +41,11 @@ concurrency:
   cancel-in-progress: true
 jobs:
   default:
-    name: t
+    name: mol
     timeout-minutes: 33
     runs-on: ubuntu-24.04
+    needs:
+      - pytest
     strategy:
       fail-fast: false
       matrix:
@@ -65,6 +67,48 @@ jobs:
           ANSIBLE_VER: "${{ matrix.ansible_ver }}"
           ANSIBLE_GITHUB_TOKEN: ${{ secrets.LOCAL_WS_TOKEN }}
         run: molecule/default/run-tests.sh
+  pytest:
+    name: pyt
+    timeout-minutes: 11
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        ansible_ver:
+          - "06"
+          - "07"
+          - "08"
+          - "09"
+          - "10"
+          - "11"
+    steps:
+      - uses: actions/checkout@v7 # zizmor: ignore[unpinned-uses]
+        with:
+          fetch-depth: 0
+          submodules: true
+          persist-credentials: false
+      - name: run tests
+        env:
+          ANSIBLE_VER: "${{ matrix.ansible_ver }}"
+          ANSIBLE_GITHUB_TOKEN: ${{ secrets.LOCAL_WS_TOKEN }}
+        run: tests/run-tests.sh
+  mutmut:
+    name: mut
+    timeout-minutes: 22
+    runs-on: ubuntu-24.04
+    needs:
+      - pytest
+    steps:
+      - uses: actions/checkout@v7 # zizmor: ignore[unpinned-uses]
+        with:
+          fetch-depth: 0
+          submodules: true
+          persist-credentials: false
+      - name: run mutmut
+        env:
+          ANSIBLE_VER: "11"
+          ANSIBLE_GITHUB_TOKEN: ${{ secrets.LOCAL_WS_TOKEN }}
+        run: tests/run-mutmut.sh
   linters:
     name: linters
     timeout-minutes: 11
@@ -107,6 +151,8 @@ jobs:
     runs-on: ubuntu-24.04
     needs:
       - default
+      - pytest
+      - mutmut
       - linters
       - MegaLinter
     if: "${{ !cancelled() && !failure() && (github.event_name == 'pull_request' ||
@@ -128,6 +174,8 @@ jobs:
     runs-on: ubuntu-24.04
     needs:
       - default
+      - pytest
+      - mutmut
       - linters
       - MegaLinter
       - mega_service

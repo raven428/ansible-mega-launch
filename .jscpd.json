@@ -18,6 +18,7 @@
     "**/*.svg",
     "**/*.zip",
     "**/*.bin",
+    "**/*.patch",
     "library/mega_launch.py",
     "library/mega_status.py",
     "library/check_service.py",

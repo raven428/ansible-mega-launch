@@ -1,0 +1,44 @@
+--- a/library/mega_status.py
++++ b/library/mega_status.py
+@@ -34,3 +33,0 @@
+-  - Requires systemd 242 or newer on the target, the journal position is kept by
+-      C(journalctl --cursor-file) in the C(<job file>.cursor) file next to the job file.
+-      The V(1) exit code of C(journalctl) without output means no new records.
+@@ -117 +113,0 @@
+-import contextlib
+@@ -119,0 +116 @@
++import time
+@@ -171 +167,0 @@
+-  cursor_path = f'{log_path}.cursor'
+@@ -183,2 +178,0 @@
+-    with contextlib.suppress(FileNotFoundError):
+-      os.unlink(cursor_path)  # noqa: PTH108
+@@ -212,0 +207 @@
++  recent = data.get('recent', None)
+@@ -214 +209,2 @@
+-  # keep journal position in a sidecar file, the job file belongs to async_wrapper only
++  # new_recent = f'{int(time.time() * 10) / 10:.1f}'  # noqa: ERA001
++  new_recent = f'{time.time()}'
+@@ -216,9 +212,2 @@
+-    [
+-      journalctl,
+-      '-t',
+-      f"mega-launch-{unit}{'' if epoch is None else f'-{epoch}'}",
+-      f'--cursor-file={cursor_path}',
+-      '-o',
+-      'cat',
+-    ],
+-    expand_user_and_vars=False,
++    f"{journalctl} -t 'mega-launch-{unit}{'' if epoch is None else f'-{epoch}'}'" +
++    ('' if recent is None else f" -S '@{recent}'") + ' -o cat',
+@@ -226 +215 @@
+-  if rc != 0 and (rc != 1 or out or err):
++  if rc != 0:
+@@ -230,0 +220,4 @@
++  data['recent'] = new_recent
++  with open(log_path, 'w', encoding='utf-8') as f:  # noqa: PTH123
++    json.dump(data, f)
++
+@@ -236,2 +228,0 @@
+-    with contextlib.suppress(FileNotFoundError):
+-      os.unlink(cursor_path)  # noqa: PTH108

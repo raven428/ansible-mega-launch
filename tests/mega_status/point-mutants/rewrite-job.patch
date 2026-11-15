@@ -1,0 +1,5 @@
+--- a/library/mega_status.py
++++ b/library/mega_status.py
+@@ -230,0 +231,2 @@
++  with open(log_path, 'w', encoding='utf-8') as f:  # noqa: PTH123
++    json.dump(data, f)

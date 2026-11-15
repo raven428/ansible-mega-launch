@@ -32,3 +32,38 @@
         success_msg: >-
           service [{{ unit_name }}] expected [{{ systemd_res.status.ActiveState }}]
           state [{{ systemd_res.status.SubState }}] sub [{{ prop_mode }}] mode
+
+    - name: Check async job files left by mega_status
+      when: prop_mode.startswith('mod_')
+      block:
+        - name: Find async job files
+          ansible.builtin.find:
+            paths: ~/.ansible_async
+            file_type: file
+          register: async_files
+
+        - name: Read async job files
+          ansible.builtin.slurp:
+            src: "{{ item }}"
+          loop: "{{ async_files.files | map(attribute='path')
+            | reject('search', '\\.cursor$') | list }}"
+          register: async_jobs
+
+        - name: Decode async job files
+          ansible.builtin.set_fact:
+            async_cursors: "{{ async_files.files | map(attribute='path')
+              | select('search', '\\.cursor$') | list }}"
+            async_data: "{{ async_jobs.results | map(attribute='content')
+              | map('b64decode') | map('from_json') | list }}"
+
+        - name: Assert no cursor files and no recent key in async job files
+          ansible.builtin.assert:
+            that:
+              - async_cursors | length == 0
+              - async_data | selectattr('recent', 'defined') | list | length == 0
+              - async_data | selectattr('passed_checks', 'defined') | list | length > 0
+            fail_msg: >-
+              cursor files [{{ async_cursors | join(',') }}] jobs with recent
+              [{{ async_data | selectattr('recent', 'defined') | list | length }}]
+              mega_launch results
+              [{{ async_data | selectattr('passed_checks', 'defined') | list | length }}]

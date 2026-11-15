@@ -1,0 +1,47 @@
+# Equivalent mutmut mutants of the changed mega_status fragment, read by mutmut_gate.py
+# entry: "= reason" line, then "- old" and "+ new" stripped source lines of the mutant
+= async_wrapper writes ASCII JSON, job file encoding is not observable
+- with open(log_path, encoding='utf-8') as f:  # noqa: FURB101,PTH123
++ with open(log_path, encoding=None) as f:  # noqa: FURB101,PTH123
+= async_wrapper writes ASCII JSON, job file encoding is not observable
+- with open(log_path, encoding='utf-8') as f:  # noqa: FURB101,PTH123
++ with open(log_path, ) as f:  # noqa: FURB101,PTH123
+= job file encoding spelling is not observable, UTF-8 and utf-8 are the same codec
+- with open(log_path, encoding='utf-8') as f:  # noqa: FURB101,PTH123
++ with open(log_path, encoding='UTF-8') as f:  # noqa: FURB101,PTH123
+= unreachable else branch of the job file reader: data stays empty on read error
+- ansible_job_id=jid,
++ ansible_job_id=None,
+= unreachable else branch of the job file reader: data stays empty on read error
+- results_file=log_path,
++ results_file=None,
+= unreachable else branch of the job file reader: data stays empty on read error
+- msg=f'Could not parse job output: {data}',
++ msg=None,
+= unreachable else branch of the job file reader: data stays empty on read error
+- started=True,
++ started=None,
+= unreachable else branch of the job file reader: data stays empty on read error
+- finished=True,
++ finished=None,
+= unreachable else branch of the job file reader: data stays empty on read error
+- ansible_job_id=jid,
+= unreachable else branch of the job file reader: data stays empty on read error
+- results_file=log_path,
+= unreachable else branch of the job file reader: data stays empty on read error
+- msg=f'Could not parse job output: {data}',
+= unreachable else branch of the job file reader: data stays empty on read error
+- started=True,
+= unreachable else branch of the job file reader: data stays empty on read error
+- finished=True,
+- )
++ )
+= unreachable else branch of the job file reader: data stays empty on read error
+- started=True,
++ started=False,
+= unreachable else branch of the job file reader: data stays empty on read error
+- finished=True,
++ finished=False,
+= run_command tests expand_user_and_vars for truth only, None and False behave the same
+- expand_user_and_vars=False,
++ expand_user_and_vars=None,

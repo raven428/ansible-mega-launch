@@ -1,0 +1,5 @@
+--- a/library/mega_status.py
++++ b/library/mega_status.py
+@@ -226 +226 @@
+-  if rc != 0 and (rc != 1 or out or err):
++  if rc != 0:
