@@ -1,5 +1,6 @@
 # Equivalent mutmut mutants of the changed mega_status fragment, read by mutmut_gate.py
 # entry: "= reason" line, then "- old" and "+ new" stripped source lines of the mutant
+# cspell:ignore furb
 = async_wrapper writes ASCII JSON, job file encoding is not observable
 - with open(log_path, encoding='utf-8') as f:  # noqa: FURB101,PTH123
 + with open(log_path, encoding=None) as f:  # noqa: FURB101,PTH123

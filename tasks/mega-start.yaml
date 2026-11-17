@@ -1,4 +1,5 @@
 ---
+# cspell:ignore melau obnulenin
 - name: Set current launch retry variable
   ansible.builtin.set_fact:
     melau_retry_count: "{{ 1 if melau_retry_count is undefined else melau_retry_count |

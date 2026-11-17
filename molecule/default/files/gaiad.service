@@ -1,3 +1,4 @@
+# cspell:ignore suidsgid
 [Unit]
 After=network-online.target
 Description=gaiad service

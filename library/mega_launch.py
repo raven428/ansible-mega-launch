@@ -1,3 +1,4 @@
+# cspell:ignore dmitrii globpattern journalctl multival restries sukhodoev sysv
 from __future__ import annotations
 
 # Copyright © 2022 Dmitrii Sukhodoev <raven428@gmail.com>
@@ -81,7 +82,7 @@ attributes:
   platform:
     platforms: debian
 '''
-
+# jscpd:ignore-start # noqa: ERA001
 EXAMPLES = r'''
 - name: start xray service with restries
   check_service:
@@ -115,6 +116,7 @@ match_lines:
     description: log line
     type: str
 '''
+# jscpd:ignore-end # noqa: ERA001
 
 import os
 import re

@@ -126,6 +126,7 @@ from ansible.module_utils.basic import (  # type: ignore[reportMissingImports]
 
 def main() -> None:
 
+  # jscpd:ignore-start # noqa: ERA001
   module = AnsibleModule(
     argument_spec={
       'jid': {
@@ -159,6 +160,7 @@ def main() -> None:
     },
     supports_check_mode=True,
   )
+  # jscpd:ignore-end # noqa: ERA001
 
   jid = module.params['jid']
   mode = module.params['mode']
@@ -246,3 +248,4 @@ def main() -> None:
 
 if __name__ == '__main__':
   main()
+# cspell:ignore furb haan journalctl

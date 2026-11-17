@@ -1,4 +1,5 @@
 ---
+# cspell:ignore melau
 - name: Start service for stop failure tests
   ansible.builtin.systemd:
     name: "{{ unit_name }}"
