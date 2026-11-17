@@ -18,7 +18,7 @@ The role performs a service launch or stop with a few of checks after with a few
 
   ```bash
   git checkout master && git pull
-  git tag -fm $(git branch --sho) 1.0.2 && git push --force origin $(git describe)
+  git tag -fm $(git branch --sho) 1.0.3 && git push --force origin $(git describe)
   ```
 
 ## Start service

@@ -1,3 +1,4 @@
+# cspell:ignore appimage autojunk
 from __future__ import annotations
 
 import difflib

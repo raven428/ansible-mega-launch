@@ -1,0 +1,6 @@
+{
+  "version": "0.2",
+  "import": [".cspell-action.json"],
+  "ignorePaths": ["tests/mega_status/point-mutants/**"],
+  "words": ["gaiad", "mutmut"]
+}

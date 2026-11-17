@@ -1,4 +1,5 @@
 ---
+# cspell:ignore melau mestop obnulenin selectattr
 - name: Set current stop retry variable
   ansible.builtin.set_fact:
     mestop_retry_count: "{{ 1 if mestop_retry_count is undefined else mestop_retry_count

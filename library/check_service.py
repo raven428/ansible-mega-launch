@@ -1,3 +1,4 @@
+# cspell:ignore dmitrii globpattern journalctl restries sukhodoev
 # Copyright © 2022 Dmitrii Sukhodoev <raven428@gmail.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");

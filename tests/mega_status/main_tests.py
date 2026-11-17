@@ -1,3 +1,4 @@
+# cspell:ignore capsys journalctl jwrite
 from __future__ import annotations
 
 import json
