@@ -1,4 +1,5 @@
 ---
+# cspell:ignore selectattr
 - name: Verify downloaded files
   hosts: all
   gather_facts: false

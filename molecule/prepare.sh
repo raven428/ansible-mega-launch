@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# cspell:ignore appimage moreutils
 set -ueo pipefail
 umask 0022
 : "${APPIMAGE_RELEASE:="010"}"

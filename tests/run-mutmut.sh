@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# cspell:ignore appimage pythondontwritebytecode
 set -ueo pipefail
 umask 0022
 MY_BIN="$(realpath "$0")"

@@ -1,4 +1,5 @@
 ---
+# cspell:ignore melau
 - name: Use vars from dict in precedence
   ansible.builtin.set_fact:
     service_name: "{{ melau.service_name | default(service_name) | default(omit) }}"

@@ -1,4 +1,5 @@
 ---
+# cspell:ignore melau
 - name: Set start epoch and async budget variables
   ansible.builtin.set_fact:
     melau_start_epoch: "{{ '%Y%m%dT%H%M%S' | strftime }}"
